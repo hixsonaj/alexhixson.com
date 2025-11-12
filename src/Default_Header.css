@@ -1,0 +1,51 @@
+.Header_Navigation{
+  float: right;
+}
+
+li{
+  display: inline-block;
+  margin: 16px;
+}
+
+.Header_Title{
+  display: inline-block;
+  color: black
+}
+
+header h3{
+  color: black; 
+  font-weight: normal;
+}
+
+header h3:hover{
+  text-decoration: underline;
+}
+
+.Icon_Container{
+  float: right;
+  margin-top: 2px;
+
+}
+
+.Header_Navigation_Toggle_Button{
+  background-color: lightgray;
+  border: none;
+  font-size: large;
+  color: black;
+}
+
+.Mobile_Navigation_Container ul{
+  display: block;
+  width: 100%;
+  padding-left: 0;
+  margin-top: 24px;
+  }
+
+.Mobile_Navigation_Container li{
+  width: 100%;
+  padding-top: 6%;
+  padding-bottom: 6%;
+  margin: 0;
+  text-align: center;
+}
+

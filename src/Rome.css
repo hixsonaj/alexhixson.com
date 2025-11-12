@@ -1,0 +1,25 @@
+.rome-container {
+  position: fixed;           /* lock it to the viewport */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: lightgray;    /* black background */
+  color: #fff;               /* white text */
+  display: flex;             
+  justify-content: center;   
+  align-items: center;       
+  font-size: 2rem;
+  font-family: 'Courier New', monospace;
+  z-index: 9999;             /* make sure it’s above header/footer */
+}
+
+@keyframes fade {
+  0% { opacity: 0; }
+  50% { opacity: 0.5; }
+  100% { opacity: 0; }
+}
+
+.rome-container h1 {
+  animation: fade 2s ease-in-out forwards;
+}

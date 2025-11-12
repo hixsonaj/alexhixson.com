@@ -1,0 +1,79 @@
+.Home_Container {
+  margin: 32px;
+  width: 90%;
+  display: inline-block;
+}
+
+.Home_Container h2{
+  margin-top: 24px;
+}
+
+.Home_Container .Projects{
+  float: right;
+  margin: 16px;
+}
+.Home_Container h3{
+  color: black;   
+  text-decoration: none;
+  font-weight: normal;
+}
+
+.Home_Container h3:hover{
+  text-decoration: underline;
+}
+
+.Home_Container h3 a{
+  color: black;   
+  text-decoration: none;
+  font-weight: normal;
+}
+
+.Home_Container h3 a:hover{
+  text-decoration: underline;
+}
+
+.Home_Container h4{
+  margin-top: 4px;
+}
+
+.Alex_Hixson {
+    float: left;
+    border-radius: 50%;
+    height: 320px;
+    margin-left: 12px;
+    margin-bottom: 12px;
+    margin-right: 24px;
+}
+
+.Icon_Email {
+  color: black;
+  padding: 6px;
+  font-size: 24px;
+}
+
+.Icon_Email:hover {
+  transform: scale(1.2);
+  transition: all 0.3s ease;
+}
+
+.Icon_Linkedin {
+  color: black;
+  padding: 6px;
+  font-size: 24px;
+}
+
+.Icon_Linkedin:hover {
+  transform: scale(1.2);
+  transition: all 0.3s ease;
+}
+
+.Icon_GitHub {
+  color: black;
+  padding: 6px;
+  font-size: 24px;
+}
+
+.Icon_GitHub:hover {
+  transform: scale(1.2);
+  transition: all 0.3s ease;
+}
