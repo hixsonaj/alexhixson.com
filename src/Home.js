@@ -1,16 +1,8 @@
 import './Home.css';
 import { useEffect, useState } from "react";
+import MessagesFeed from './Messages';
 
 export default function Home() {
-
-  useEffect(() => {
-  fetch("http://alexhixson.zerofour.tech/messages.txt")
-    .then(res => res.text())
-    .then(text => setMessages(text))
-    .catch(err => console.error(err));
-  }, []);
-
-  const [messages, setMessages] = useState("");
 
   return (
     <div className='Home_Container'>
@@ -21,7 +13,7 @@ export default function Home() {
       <h1>ALEXHIXSON.COM!!!!!!!!!!</h1>
       <p>LETS GOOOOO</p>
       <p>HOLY WEBDEV!!!!!</p>
-      <p>{messages}</p>
+      <p><MessagesFeed/></p>
     </div>
   );
 }
