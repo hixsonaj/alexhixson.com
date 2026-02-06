@@ -8,10 +8,9 @@ export default function Home() {
     <div className='Home_Container'>
       <img
         className="Alex_Hixson"
-        src={'/images/are_you_serious.jpg'}
-        alt={'are_you_serious'}/>
-      <h1>ALEXHIXSON.COM!!!!!!!!!!</h1>
-      <p>LETS GOOOOO</p>
+        src={'/images/AlexHixson.jpg'}
+        alt={'Alex Hixson'}/>
+      <h1>ALEXHIXSON.COM</h1>
       <p>HOLY WEBDEV!!!!!</p>
       <p><MessagesFeed/></p>
     </div>

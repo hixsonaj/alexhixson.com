@@ -1,0 +1,22 @@
+.Gallery_Container{
+  .photo {
+    height: 350px;
+    margin-left: 6px;
+  }
+  .photo2 {
+    height: 350px;
+    margin-left: 6px;
+  }
+
+  @media (max-width: 768px) {
+  text-align: center;
+    .photo {
+      width: 94%;
+      margin-top: 36px;
+    }
+    .photo2 {
+      width: 94%;
+      margin-top: 36px;
+    }
+  }
+}

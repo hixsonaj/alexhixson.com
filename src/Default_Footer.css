@@ -1,6 +1,10 @@
-Footer{
+footer{
   text-align: center;
   margin-top: 32px;
+}
+
+.Footer_Title_Container{
+  display: inline-block;
 }
 
 .Footer_Title{
