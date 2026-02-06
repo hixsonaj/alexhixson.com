@@ -12,10 +12,12 @@
   text-align: center;
     .photo {
       width: 94%;
+      height: auto;
       margin-top: 36px;
     }
     .photo2 {
       width: 94%;
+      height: auto;
       margin-top: 36px;
     }
   }

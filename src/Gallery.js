@@ -7,67 +7,67 @@ export default function Gallery() {
     <div className='Gallery_Container'>
       <img
         className="photo"
-        src={'/images/alexhixson.jpg'}
+        src={'/images/AlexHixson.jpg'}
         alt={'Alex Hixson'}/>
       <img
         className="photo"
-        src={'/images/image1.jpg'}
+        src={'/images/Image1.jpg'}
         alt={'BrockHampton'}/>
       <img
         className="photo"
-        src={'/images/image2.jpg'}
+        src={'/images/Image2.jpg'}
         alt={'RAHHH'}/>
       <img
         className="photo2"
-        src={'/images/image3.jpg'}
+        src={'/images/Image3.jpg'}
         alt={'MBAC'}/>
       <img
         className="photo"
-        src={'/images/image4.jpg'}
+        src={'/images/Image4.jpg'}
         alt={'Amaruism'}/>
       <img
         className="photo2"
-        src={'/images/image5.jpg'}
+        src={'/images/Image5.jpg'}
         alt={'The Water Sports Camp'}/>
       <img
         className="photo"
-        src={'/images/image6.jpg'}
+        src={'/images/Image6.jpg'}
         alt={'Drunk'}/>
       <img
         className="photo"
-        src={'/images/image7.jpg'}
+        src={'/images/Image7.jpg'}
         alt={'Gee Whizz'}/>
       <img
         className="photo2"
-        src={'/images/image8.jpg'}
+        src={'/images/Image8.jpg'}
         alt={'HEY SAILORS'}/>
       <img
         className="photo"
-        src={'/images/image9.jpg'}
+        src={'/images/Image9.jpg'}
         alt={'MBAC!!!'}/>
       <img
         className="photo2"
-        src={'/images/image10.jpg'}
+        src={'/images/Image10.jpg'}
         alt={'MBAC!!!!!'}/>
       <img
         className="photo2"
-        src={'/images/image11.jpg'}
+        src={'/images/Image11.jpg'}
         alt={'cute'}/>
       <img
         className="photo2"
-        src={'/images/image12.jpg'}
+        src={'/images/Image12.jpg'}
         alt={'oh hell nah'}/>
       <img
         className="photo2"
-        src={'/images/image13.jpg'}
+        src={'/images/Image13.jpg'}
         alt={'21!'}/>
       <img
         className="photo"
-        src={'/images/image.jpg'}
+        src={'/images/Image.jpg'}
         alt={'Skiing'}/>
       <img
         className="photo2"
-        src={'/images/image14.jpg'}
+        src={'/images/Image14.jpg'}
         alt={'twenty one!'}/>
     </div>
   );
