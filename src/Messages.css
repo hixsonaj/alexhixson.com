@@ -2,6 +2,27 @@
   padding: 20px;
   max-width: 800px;
   margin: auto;
+
+  .Get_Access {
+    text-decoration: none;
+    color: black;
+    position: relative;
+  }
+
+  .Message_Access {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: max-height 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  .Get_Access:hover .Message_Access {
+    max-height: 200px; /* Adjust based on your content height */
+    opacity: 1;
+    transform: translateY(0);
+  }
+
 }
 
 .Messages_List {

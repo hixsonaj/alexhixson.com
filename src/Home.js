@@ -12,7 +12,7 @@ export default function Home() {
         alt={'Alex Hixson'}/>
       <h1>ALEXHIXSON.COM</h1>
       <p>HOLY WEBDEV!!!!!</p>
-      <p><MessagesFeed/></p>
+      <p><MessagesFeed messagesPerPage={5} enableLoadMore={false}/></p>
     </div>
   );
 }
