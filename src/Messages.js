@@ -73,9 +73,9 @@ export default function MessagesFeed({
   return (
     <div className="MessagesFeed_Container">
       <h2>Messages</h2>
-      <p className="Get_Access">Get a message board access code!
-        <p className="Message_Access">Email: messageaccess@zerofour.tech</p>
-      </p>
+      <p className="Get_Access">Get a message board access code!</p>
+      <p className="Message_Access">Email: messageaccess@zerofour.tech</p>
+      
       {messages.length === 0 ? (
         <p>No messages yet.</p>
       ) : (
