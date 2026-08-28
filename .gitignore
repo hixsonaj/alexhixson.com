@@ -16,6 +16,10 @@ secrets.php
 /secrets.php
 ../secrets.php
 
+# image staging dirs — these live on the server and are fetched at runtime
+/public/gallery
+/public/profile-images
+
 # misc
 .DS_Store
 .env.local

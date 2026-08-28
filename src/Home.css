@@ -1,90 +1,141 @@
 .Home_Container {
   margin: 32px;
   width: 90%;
-  display: inline-block;
-}
-
-.Home_Container h2{
-  margin-top: 24px;
-}
-
-.Home_Container .Projects{
-  float: right;
-  margin: 16px;
-}
-.Home_Container h3{
-  color: black;   
-  text-decoration: none;
-  font-weight: normal;
-}
-
-.Home_Container h3:hover{
-  text-decoration: underline;
-}
-
-.Home_Container h3 a{
-  color: black;   
-  text-decoration: none;
-  font-weight: normal;
-}
-
-.Home_Container h3 a:hover{
-  text-decoration: underline;
-}
-
-.Home_Container h4{
-  margin-top: 4px;
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
 }
 
 .Alex_Hixson {
-    float: left;
-    border-radius: 50%;
-    height: 320px;
-    margin-left: 12px;
-    margin-bottom: 12px;
-    margin-right: 24px;
+  border-radius: 50%;
+  height: 320px;
+  width: 240px;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
-@media (max-width: 768px) {
-  .Alex_Hixson {
-      float: left;
-      border-radius: 50%;
-      height: 160px;
-      margin-left: 12px;
-      margin-bottom: 12px;
-      margin-right: 100%;
+.Posts_Container {
+  flex: 1;
+  min-width: 0;
+  width: 0;
+}
+
+.Post {
+  padding: 16px 16px 20px;
+  border-bottom: 1px solid #aeaeae;
+}
+
+.Post p {
+  margin: 0 0 4px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.Post_Date {
+  display: block;
+  font-size: 0.75rem;
+  color: #888888;
+  margin-top: 10px;
+}
+
+.Post_Image {
+  display: block;
+  max-width: 450px;
+  max-height: 450px;
+  width: 100%;
+  object-fit: contain;
+  margin-top: 10px;
+}
+
+/* Poll */
+.Poll {
+  margin-top: 14px;
+  margin-bottom: 4px;
+}
+
+.Poll_Option {
+  display: block;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 8px 14px;
+  background: white;
+  border: 1px solid #aaa;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.Poll_Option:hover {
+  background: #f0f0f0;
+}
+
+.Poll_Result {
+  margin-bottom: 10px;
+}
+
+.Poll_Result_Label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+
+.Poll_Check {
+  color: #444;
+  margin-left: 6px;
+}
+
+.Poll_Pct {
+  color: #666;
+  margin-left: auto;
+}
+
+.Poll_Bar_Track {
+  width: 100%;
+  height: 8px;
+  background: #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.Poll_Bar_Fill {
+  height: 100%;
+  background: #444;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.Poll_Total {
+  display: block;
+  font-size: 0.72rem;
+  color: #999;
+  margin-top: 6px;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .Home_Container {
+    flex-direction: column;
+    margin: 8px;
+    width: auto;
   }
-}
 
-.Icon_Email {
-  color: black;
-  padding: 6px;
-  font-size: 24px;
-}
+  .Alex_Hixson {
+    height: 140px;
+    width: 105px;
+    align-self: center;
+  }
 
-.Icon_Email:hover {
-  transform: scale(1.2);
-  transition: all 0.3s ease;
-}
+  .Posts_Container {
+    width: 100%;
+  }
 
-.Icon_Linkedin {
-  color: black;
-  padding: 6px;
-  font-size: 24px;
-}
+  .Post p {
+    font-size: 0.85rem;
+  }
 
-.Icon_Linkedin:hover {
-  transform: scale(1.2);
-  transition: all 0.3s ease;
-}
-
-.Icon_GitHub {
-  color: black;
-  padding: 6px;
-  font-size: 24px;
-}
-
-.Icon_GitHub:hover {
-  transform: scale(1.2);
-  transition: all 0.3s ease;
+  .Post_Date {
+    font-size: 0.7rem;
+  }
 }
