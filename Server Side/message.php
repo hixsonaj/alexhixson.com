@@ -1,17 +1,38 @@
 #!/usr/bin/php -q
 <?php
+// Mail pipe. cPanel forwards a message here on stdin; this parses it and files
+// it as a post.
+//
+// The same file serves every site. It works out which one from its own path:
+//   ~/mail/<domain>/message/message.php  ->  <domain>
+// so the copy under leahhixson.zerofour.tech configures itself. Pass a domain as
+// the first argument to override.
+//
+// After any upload:  chmod 755 message.php
+// SCP and FTP both drop the execute bit, and without it the pipe silently
+// never runs — no error, no log line, mail just vanishes.
+
 ini_set('display_errors', 0);
 error_reporting(0);
 
-$log = '/home/vuc923ya50qu/mail/alexhixson.zerofour.tech/message/mail_debug.log';
-file_put_contents($log, date('Y-m-d H:i:s') . " — script started\n", FILE_APPEND);
+$SITE_DOMAIN   = $argv[1] ?? basename(dirname(__DIR__));   // ~/mail/<domain>/message -> <domain>
+$ACCOUNT_ROOT  = dirname(dirname(dirname(__DIR__)));   // ~/mail/<domain>/message -> ~
+$log           = __DIR__ . '/mail_debug.log';
+
+function logline($msg) {
+    global $log;
+    file_put_contents($log, date('Y-m-d H:i:s') . " — $msg\n", FILE_APPEND);
+}
+
+logline("script started (site=$SITE_DOMAIN)");
 
 ini_set('display_errors', 1);
 ini_set('log_errors', 1);
 ini_set('error_log', $log);
 error_reporting(E_ALL);
 
-require_once '/home/vuc923ya50qu/vendor/autoload.php';
+require_once $ACCOUNT_ROOT . '/vendor/autoload.php';
+require_once $ACCOUNT_ROOT . '/site_config.php';
 use ZBateson\MailMimeParser\MailMimeParser;
 
 $parser = new MailMimeParser();
@@ -38,86 +59,90 @@ if (mb_strlen($clean_message) > 2000) {
     $clean_message = mb_substr($clean_message, 0, 2000);
 }
 
-// ---- Parse poll from subject ----
-// Format: "Poll: option1, option2, option3"
+// ---- Poll, from the subject line: "Poll: option one, option two" ----
 $poll_options = null;
 if (preg_match('/^Poll:\s*(.+)$/i', $subject, $m)) {
-    $raw_options = array_map('trim', explode(',', $m[1]));
-    $raw_options = array_filter($raw_options, fn($o) => $o !== '');
-    if (count($raw_options) >= 2) {
-        $poll_options = array_values($raw_options);
-    }
-    $subject = ''; // subject was just for poll config, clear it
+    $raw = array_values(array_filter(array_map('trim', explode(',', $m[1])), fn($o) => $o !== ''));
+    if (count($raw) >= 2) $poll_options = $raw;
+    $subject = '';   // the subject was poll config, not a title
 }
 
-file_put_contents($log, date('Y-m-d H:i:s') . " — parsed. from='$email' poll=" . ($poll_options ? implode(',', $poll_options) : 'none') . "\n", FILE_APPEND);
+logline("parsed. from='$email' poll=" . ($poll_options ? implode(' | ', $poll_options) : 'none'));
 
-// ---- Load secrets ----
-$secrets        = include('/home/vuc923ya50qu/secrets.php');
-$allowedSenders = array_map('strtolower', $secrets['allowed_senders']);
-$subjectToken   = $secrets['subject_token'] ?? '';
-$tokenInSubject = ($subjectToken !== '') && (strpos($subject, $subjectToken) !== false);
+// ---- This site's config ----
+$cfg = site_secrets($SITE_DOMAIN, $ACCOUNT_ROOT . '/secrets.php');
+if (!$cfg) {
+    logline("NO CONFIG for '$SITE_DOMAIN' — check the 'sites' key in secrets.php");
+    exit(0);
+}
+
+$allowedSenders = array_map('strtolower', $cfg['allowed_senders'] ?? []);
+$subjectToken   = $cfg['subject_token'] ?? '';
+$tokenInSubject = ($subjectToken !== '') && (stripos($subject, $subjectToken) !== false);
 $emailAllowed   = ($email !== '' && in_array($email, $allowedSenders, true));
 
 if (!$emailAllowed && !$tokenInSubject) {
-    $inv = '/home/vuc923ya50qu/mail/alexhixson.zerofour.tech/message/invalid_access.log';
-    file_put_contents($inv, date('Y-m-d H:i:s') . " - Rejected: sender='$email'\n", FILE_APPEND);
+    file_put_contents(__DIR__ . '/invalid_access.log',
+        date('Y-m-d H:i:s') . " - Rejected: sender='$email' site='$SITE_DOMAIN'\n", FILE_APPEND);
+    logline("rejected sender '$email'");
     exit(0);
 }
 
 if ($tokenInSubject) {
-    $subject = trim(preg_replace('/\s+/', ' ', str_replace($subjectToken, '', $subject)));
+    $subject = trim(preg_replace('/\s+/', ' ', str_ireplace($subjectToken, '', $subject)));
 }
 
-// ---- Connect to DB ----
-$mysqli = new mysqli($secrets['db']['host'], $secrets['db']['user'], $secrets['db']['pass'], $secrets['db']['dbname']);
+// ---- Database ----
+$db = $cfg['db'];
+$mysqli = new mysqli($db['host'], $db['user'], $db['pass'], $db['dbname']);
 if ($mysqli->connect_error) {
-    file_put_contents($log, date('Y-m-d H:i:s') . " — DB error: " . $mysqli->connect_error . "\n", FILE_APPEND);
+    logline("DB error: " . $mysqli->connect_error);
     exit(0);
 }
+$mysqli->set_charset('utf8mb4');
 
-// ---- Image attachment ----
+// ---- Image attachment (first image only) ----
 $image_url = null;
-$allowed_mime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-$img_dir = '/home/vuc923ya50qu/public_html/alexhixson.zerofour.tech/post-images/';
-$img_base_url = 'https://alexhixson.zerofour.tech/post-images/';
-
 $ext_map = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif', 'image/webp' => 'webp'];
+$img_dir      = "$ACCOUNT_ROOT/public_html/$SITE_DOMAIN/post-images/";
+$img_base_url = "https://$SITE_DOMAIN/post-images/";
+
+if (!is_dir($img_dir)) @mkdir($img_dir, 0755, true);
+
 foreach ($mail->getAllAttachmentParts() as $part) {
-    $mime = strtolower($part->getHeaderValue('Content-Type') ?? '');
-    $mime = explode(';', $mime)[0];
+    $mime = strtolower(explode(';', $part->getHeaderValue('Content-Type') ?? '')[0]);
     if (!isset($ext_map[$mime])) continue;
 
     $filename = 'img_' . uniqid('', true) . '.' . $ext_map[$mime];
-    $filepath = $img_dir . $filename;
+    $handle   = $part->getBinaryContentResourceHandle();
 
-    $content = $part->getBinaryContentResourceHandle();
-    if ($content && file_put_contents($filepath, stream_get_contents($content)) !== false) {
-        chmod($filepath, 0644);
+    if ($handle && file_put_contents($img_dir . $filename, stream_get_contents($handle)) !== false) {
+        chmod($img_dir . $filename, 0644);   // uploads default to unreadable by the webserver
         $image_url = $img_base_url . $filename;
-        file_put_contents($log, date('Y-m-d H:i:s') . " — saved image: $filename\n", FILE_APPEND);
+        logline("saved image: $filename");
     }
-    break; // only save first image
+    break;
 }
 
-// ---- Insert message ----
-$stmt = $mysqli->prepare("INSERT INTO messages (sender_name, sender_email, subject, message, image_url, received_at) VALUES (?, ?, ?, ?, ?, NOW())");
+// ---- Insert ----
+$stmt = $mysqli->prepare(
+    "INSERT INTO messages (sender_name, sender_email, subject, message, image_url, received_at)
+     VALUES (?, ?, ?, ?, ?, NOW())"
+);
 $stmt->bind_param("sssss", $name, $email, $subject, $clean_message, $image_url);
 $stmt->execute();
 $message_id = $mysqli->insert_id;
 $stmt->close();
 
-// ---- Insert poll if present ----
 if ($poll_options && $message_id) {
-    $options_json = json_encode($poll_options);
+    $options_json = json_encode($poll_options, JSON_UNESCAPED_UNICODE);
     $ps = $mysqli->prepare("INSERT INTO polls (message_id, options) VALUES (?, ?)");
     $ps->bind_param("is", $message_id, $options_json);
     $ps->execute();
     $ps->close();
-    file_put_contents($log, date('Y-m-d H:i:s') . " — poll created for message $message_id\n", FILE_APPEND);
+    logline("poll created for message $message_id");
 }
 
 $mysqli->close();
-file_put_contents($log, date('Y-m-d H:i:s') . " — done\n", FILE_APPEND);
+logline("done (message $message_id)");
 exit(0);
-?>

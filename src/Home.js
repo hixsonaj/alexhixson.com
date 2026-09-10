@@ -1,12 +1,17 @@
 import './Home.css';
 import { useEffect, useState } from 'react';
+import { api, SITE_NAME_SHORT } from './config';
+
+const POSTS_PER_PAGE = 50;
 
 export default function Home() {
   const [profileImg, setProfileImg] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
-    fetch('https://alexhixson.zerofour.tech/profile_images.php')
+    fetch(api('profile_images.php'))
       .then(res => res.json())
       .then(data => {
         if (data.images && data.images.length > 0) {
@@ -18,14 +23,29 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    fetch('https://alexhixson.zerofour.tech/retrieve_messages.php')
+    fetch(api(`retrieve_messages.php?offset=0&limit=${POSTS_PER_PAGE}`))
       .then(res => res.json())
-      .then(data => setPosts(Array.isArray(data) ? data : (data.messages || [])))
+      .then(data => {
+        setPosts(data.messages || []);
+        setHasMore(data.hasMore || false);
+      })
       .catch(() => {});
   }, []);
 
+  function loadMore() {
+    setLoadingMore(true);
+    fetch(api(`retrieve_messages.php?offset=${posts.length}&limit=${POSTS_PER_PAGE}`))
+      .then(res => res.json())
+      .then(data => {
+        setPosts(prev => [...prev, ...(data.messages || [])]);
+        setHasMore(data.hasMore || false);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingMore(false));
+  }
+
   function handleVote(pollId, optionIndex, postId) {
-    fetch('https://alexhixson.zerofour.tech/submit_vote.php', {
+    fetch(api('submit_vote.php'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ poll_id: pollId, option_index: optionIndex }),
@@ -44,7 +64,7 @@ export default function Home() {
 
   return (
     <div className='Home_Container'>
-      {profileImg && <img className="Alex_Hixson" src={profileImg} alt={'Alex Hixson'} />}
+      {profileImg && <img className="Alex_Hixson" src={profileImg} alt={SITE_NAME_SHORT} />}
       <div className='Posts_Container'>
         {posts.length === 0 ? (
           <div className='Post'><p>No posts yet.</p></div>
@@ -65,6 +85,11 @@ export default function Home() {
               </span>
             </div>
           ))
+        )}
+        {hasMore && (
+          <button className='Load_More' onClick={loadMore} disabled={loadingMore}>
+            {loadingMore ? 'LOADING...' : 'LOAD MORE'}
+          </button>
         )}
       </div>
     </div>

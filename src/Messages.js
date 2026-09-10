@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./Messages.css";
+import { api } from "./config";
 
 export default function MessagesFeed({
   messagesPerPage = 10,
@@ -21,7 +22,7 @@ export default function MessagesFeed({
       }
 
       const response = await fetch(
-        `https://alexhixson.zerofour.tech/retrieve_messages.php?offset=${currentOffset}&limit=${messagesPerPage}`
+        api(`retrieve_messages.php?offset=${currentOffset}&limit=${messagesPerPage}`)
       );
 
       if (!response.ok) {

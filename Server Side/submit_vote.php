@@ -6,55 +6,48 @@ header("Content-Type: application/json");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
 
+require_once dirname(dirname(__DIR__)) . '/site_config.php';  // ~/site_config.php
+
 $body       = json_decode(file_get_contents('php://input'), true);
-$poll_id    = isset($body['poll_id'])     ? (int)$body['poll_id']     : null;
+$poll_id    = isset($body['poll_id'])      ? (int)$body['poll_id']      : null;
 $option_idx = isset($body['option_index']) ? (int)$body['option_index'] : null;
 
 if ($poll_id === null || $option_idx === null) {
-    http_response_code(400);
-    echo json_encode(["error" => "Missing poll_id or option_index"]);
-    exit;
+    site_fail(400, "Missing poll_id or option_index");
 }
 
 $ip_hash = hash('sha256', $_SERVER['REMOTE_ADDR'] ?? '');
-$secrets = include('/home/vuc923ya50qu/secrets.php');
+$conn = site_db(site_secrets());
 
-$conn = new mysqli($secrets['db']['host'], $secrets['db']['user'], $secrets['db']['pass'], $secrets['db']['dbname']);
-if ($conn->connect_error) {
-    http_response_code(500);
-    echo json_encode(["error" => "DB error"]);
-    exit;
-}
-
-// Verify poll exists and option index is valid
+// Poll must exist on THIS site's database, and the option must be real.
 $ps = $conn->prepare("SELECT id, options FROM polls WHERE id = ?");
 $ps->bind_param("i", $poll_id);
 $ps->execute();
 $poll = $ps->get_result()->fetch_assoc();
 $ps->close();
 
-if (!$poll) {
-    http_response_code(404);
-    echo json_encode(["error" => "Poll not found"]);
-    exit;
-}
+if (!$poll) site_fail(404, "Poll not found");
 
-$options = json_decode($poll['options'], true);
+$options = json_decode($poll['options'], true) ?: [];
 if ($option_idx < 0 || $option_idx >= count($options)) {
-    http_response_code(400);
-    echo json_encode(["error" => "Invalid option"]);
-    exit;
+    site_fail(400, "Invalid option");
 }
 
-// Insert vote — IGNORE silently handles duplicate (already voted)
+// INSERT IGNORE + the UNIQUE KEY on (poll_id, ip_hash) makes a second vote a no-op.
 $vs = $conn->prepare("INSERT IGNORE INTO poll_votes (poll_id, option_index, ip_hash) VALUES (?, ?, ?)");
 $vs->bind_param("iis", $poll_id, $option_idx, $ip_hash);
 $vs->execute();
 $new_vote = $vs->affected_rows > 0;
 $vs->close();
 
-// Return updated counts
-$cr = $conn->prepare("SELECT option_index, COUNT(*) as cnt FROM poll_votes WHERE poll_id = ? GROUP BY option_index");
+// Whatever the outcome, report the vote actually on record for this visitor.
+$es = $conn->prepare("SELECT option_index FROM poll_votes WHERE poll_id = ? AND ip_hash = ?");
+$es->bind_param("is", $poll_id, $ip_hash);
+$es->execute();
+$existing = $es->get_result()->fetch_assoc();
+$es->close();
+
+$cr = $conn->prepare("SELECT option_index, COUNT(*) AS cnt FROM poll_votes WHERE poll_id = ? GROUP BY option_index");
 $cr->bind_param("i", $poll_id);
 $cr->execute();
 $rows  = $cr->get_result();
@@ -69,5 +62,5 @@ echo json_encode([
     "success"    => true,
     "new_vote"   => $new_vote,
     "votes"      => $votes,
-    "user_voted" => $option_idx,
+    "user_voted" => $existing ? (int)$existing['option_index'] : $option_idx,
 ]);

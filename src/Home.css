@@ -38,6 +38,28 @@
   margin-top: 10px;
 }
 
+.Load_More {
+  display: block;
+  margin: 20px auto 0;
+  padding: 8px 24px;
+  background: none;
+  border: 1px solid #aeaeae;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  color: #444;
+  cursor: pointer;
+}
+
+.Load_More:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.Load_More:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .Post_Image {
   display: block;
   max-width: 450px;

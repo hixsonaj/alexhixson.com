@@ -4,20 +4,21 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { useState } from "react";
 import './Default_Header.css';
+import { SITE_NAME, SITE_NAME_SHORT } from './config';
 
 export default function Default_Header() {
   const [show, setShow] = useState(false);
   return (
     <header>
       <BrowserView>
-        <Link to="/"><h1 className='Header_Title'>ALEXHIXSON.COM</h1></Link>
+        <Link to="/"><h1 className='Header_Title'>{SITE_NAME}</h1></Link>
         <ul className='Header_Navigation'>
           <li><Link to="/socials" style={{ textDecoration: 'none' }}><h3 className='link'>SOCIALS</h3></Link></li> {/*Not sure why style cant go in css*/}
           <li><Link to="/gallery" style={{ textDecoration: 'none' }}><h3 className='link'>GALLERY</h3></Link></li>
         </ul>
       </BrowserView>
       <MobileView>
-        <Link to="/"><h1 className='Header_Title'>ALEX HIXSON</h1></Link>          
+        <Link to="/"><h1 className='Header_Title'>{SITE_NAME_SHORT}</h1></Link>          
         <div className='Icon_Container'>
           <button className="Header_Navigation_Toggle_Button" onClick={() => setShow(!show)}>
             {show ? <FontAwesomeIcon icon={faXmark} /> : <FontAwesomeIcon icon={faBars} />}

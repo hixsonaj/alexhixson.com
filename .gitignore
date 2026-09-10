@@ -30,3 +30,6 @@ secrets.php
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# per-site build output
+/builds

@@ -22,7 +22,11 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "build:alex": "./scripts/build-site.sh alex",
+    "build:leah": "./scripts/build-site.sh leah",
+    "deploy:alex": "./scripts/deploy-site.sh alex",
+    "deploy:leah": "./scripts/deploy-site.sh leah"
   },
   "eslintConfig": {
     "extends": [

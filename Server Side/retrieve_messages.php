@@ -4,84 +4,108 @@ header("Access-Control-Allow-Methods: GET");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
-$secrets = include('/home/vuc923ya50qu/secrets.php');
+require_once dirname(dirname(__DIR__)) . '/site_config.php';  // ~/site_config.php
 
-$conn = new mysqli(
-    $secrets['db']['host'],
-    $secrets['db']['user'],
-    $secrets['db']['pass'],
-    $secrets['db']['dbname']
-);
-
-if ($conn->connect_error) {
-    http_response_code(500);
-    echo json_encode(["error" => "Database connection failed"]);
-    exit;
-}
+$conn = site_db(site_secrets());
 
 $limit  = isset($_GET['limit'])  ? (int)$_GET['limit']  : 20;
 $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
+
+// Clamp so a crafted ?limit=999999 can't ask the server for the whole table.
+$limit  = max(1, min($limit, 100));
+$offset = max(0, $offset);
+
 $ip_hash = hash('sha256', $_SERVER['REMOTE_ADDR'] ?? '');
 
-// Fetch messages
-$sql = "SELECT id, sender_name, subject, message, image_url, received_at FROM messages ORDER BY received_at DESC LIMIT ? OFFSET ?";
-$stmt = $conn->prepare($sql);
+// Messages
+$stmt = $conn->prepare(
+    "SELECT id, sender_name, subject, message, image_url, received_at
+     FROM messages ORDER BY received_at DESC LIMIT ? OFFSET ?"
+);
 $stmt->bind_param("ii", $limit, $offset);
 $stmt->execute();
 $result = $stmt->get_result();
 $messages = [];
+$ids = [];
 while ($row = $result->fetch_assoc()) {
-    $messages[] = $row;
+    $row['poll'] = null;
+    $messages[$row['id']] = $row;
+    $ids[] = (int)$row['id'];
 }
 $stmt->close();
 
-// Attach poll data to each message
-foreach ($messages as &$msg) {
-    $ps = $conn->prepare("SELECT id, options FROM polls WHERE message_id = ?");
-    $ps->bind_param("i", $msg['id']);
+// Polls for this page of messages, in three queries total rather than three per
+// message — at 100 posts the old per-message version issued 300 round trips.
+if ($ids) {
+    $in = implode(',', array_fill(0, count($ids), '?'));
+    $types = str_repeat('i', count($ids));
+
+    $ps = $conn->prepare("SELECT id, message_id, options FROM polls WHERE message_id IN ($in)");
+    $ps->bind_param($types, ...$ids);
     $ps->execute();
-    $poll = $ps->get_result()->fetch_assoc();
+    $pr = $ps->get_result();
+
+    $polls = [];
+    while ($p = $pr->fetch_assoc()) {
+        $options = json_decode($p['options'], true) ?: [];
+        $polls[(int)$p['id']] = [
+            'message_id' => (int)$p['message_id'],
+            'options'    => $options,
+            'votes'      => array_fill(0, count($options), 0),
+            'user_voted' => null,
+        ];
+    }
     $ps->close();
 
-    if ($poll) {
-        $poll_id = (int)$poll['id'];
-        $options = json_decode($poll['options'], true);
+    if ($polls) {
+        $pids  = array_keys($polls);
+        $pin   = implode(',', array_fill(0, count($pids), '?'));
+        $ptype = str_repeat('i', count($pids));
 
-        // Vote counts per option
-        $vs = $conn->prepare("SELECT option_index, COUNT(*) as cnt FROM poll_votes WHERE poll_id = ? GROUP BY option_index");
-        $vs->bind_param("i", $poll_id);
+        // Vote tallies
+        $vs = $conn->prepare(
+            "SELECT poll_id, option_index, COUNT(*) AS cnt
+             FROM poll_votes WHERE poll_id IN ($pin) GROUP BY poll_id, option_index"
+        );
+        $vs->bind_param($ptype, ...$pids);
         $vs->execute();
         $vr = $vs->get_result();
-        $votes = array_fill(0, count($options), 0);
         while ($v = $vr->fetch_assoc()) {
-            $votes[(int)$v['option_index']] = (int)$v['cnt'];
+            $pid = (int)$v['poll_id'];
+            $idx = (int)$v['option_index'];
+            if (isset($polls[$pid]['votes'][$idx])) {
+                $polls[$pid]['votes'][$idx] = (int)$v['cnt'];
+            }
         }
         $vs->close();
 
-        // Did this IP vote?
-        $ivs = $conn->prepare("SELECT option_index FROM poll_votes WHERE poll_id = ? AND ip_hash = ?");
-        $ivs->bind_param("is", $poll_id, $ip_hash);
-        $ivs->execute();
-        $iv = $ivs->get_result()->fetch_assoc();
-        $ivs->close();
+        // Which of them this visitor has already voted in
+        $os = $conn->prepare(
+            "SELECT poll_id, option_index FROM poll_votes
+             WHERE poll_id IN ($pin) AND ip_hash = ?"
+        );
+        $os->bind_param($ptype . 's', ...array_merge($pids, [$ip_hash]));
+        $os->execute();
+        $or = $os->get_result();
+        while ($o = $or->fetch_assoc()) {
+            $polls[(int)$o['poll_id']]['user_voted'] = (int)$o['option_index'];
+        }
+        $os->close();
 
-        $msg['poll'] = [
-            'id'         => $poll_id,
-            'options'    => $options,
-            'votes'      => $votes,
-            'user_voted' => $iv ? (int)$iv['option_index'] : null,
-        ];
-    } else {
-        $msg['poll'] = null;
+        foreach ($polls as $pid => $p) {
+            $mid = $p['message_id'];
+            if (!isset($messages[$mid])) continue;
+            unset($p['message_id']);
+            $messages[$mid]['poll'] = ['id' => $pid] + $p;
+        }
     }
 }
 
-// Total count
-$total = $conn->query("SELECT COUNT(*) as total FROM messages")->fetch_assoc()['total'];
+$total = (int)$conn->query("SELECT COUNT(*) AS total FROM messages")->fetch_assoc()['total'];
 $conn->close();
 
 echo json_encode([
-    "messages" => $messages,
+    "messages" => array_values($messages),
     "hasMore"  => ($offset + $limit) < $total,
     "total"    => $total,
 ]);
