@@ -7,7 +7,7 @@ for the PHP.
 | | Alex | Leah |
 |---|---|---|
 | Domain | alexhixson.zerofour.tech | leahhixson.zerofour.tech |
-| Post by emailing | alex@zerofour.tech | leah@zerofour.tech |
+| Post by emailing | alexfeed@zerofour.tech | leahfeed@zerofour.tech |
 | Config | `sites/alex.env` | `sites/leah.env` |
 | Build output | `builds/alex/` | `builds/leah/` |
 
@@ -55,13 +55,24 @@ ssh vuc923ya50qu@zerofour.tech "mkdir -p public_html/<domain>/{gallery,profile-i
 ```
 
 **4. Mail routing** — cPanel > Email > Forwarders > Add Forwarder. Address
-`leah@zerofour.tech`, destination *Pipe to a Program*:
+`leahfeed@zerofour.tech`, destination *Pipe to a Program*:
 
 ```
 mail/leahhixson.zerofour.tech/message/message.php
 ```
 
 Path is relative to the home directory, with no leading slash.
+
+The inbound address appears nowhere in the code — it is only this forwarder, so
+renaming it is a cPanel change and nothing else. `allowed_senders` in
+`secrets.php` is a separate thing: who may post, not where they post to.
+
+Current forwarders:
+
+| Address | Pipes to |
+|---|---|
+| `alexfeed@zerofour.tech` | `mail/alexhixson.zerofour.tech/message/message.php` |
+| `leahfeed@zerofour.tech` | `mail/leahhixson.zerofour.tech/message/message.php` |
 
 **5. Deploy**
 
