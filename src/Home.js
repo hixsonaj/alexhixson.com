@@ -105,10 +105,9 @@ function EssayPreview({ post }) {
   const preview = excerpt(post.message, 280);
   return (
     <>
-      <span className='Essay_Label'>ESSAY</span>
       <Link className='Essay_Preview_Title' to={`/essay/${post.id}`}>{post.title || 'Untitled'}</Link>
       {preview.text && <p className='Essay_Preview_Text'>{preview.text}{preview.truncated ? '…' : ''}</p>}
-      <Link className='Essay_Read' to={`/essay/${post.id}`}>READ ESSAY →</Link>
+      <Link className='Essay_Read' to={`/essay/${post.id}`}>READ ENTRY →</Link>
     </>
   );
 }
