@@ -55,7 +55,16 @@ if ($text === null) {
     $text = $html !== null ? strip_tags($html) : '';
 }
 $clean_message = trim($text);
-if (mb_strlen($clean_message) > 2000) {
+
+// Posts are short. An "Essay: Title" subject lifts the cap to what the TEXT
+// column can hold (65,535 bytes), measured in bytes so a multibyte character is
+// never split.
+$is_essay = (bool)preg_match('/^\s*Essay:/i', $subject);
+if ($is_essay) {
+    if (strlen($clean_message) > 64000) {
+        $clean_message = mb_strcut($clean_message, 0, 64000);
+    }
+} elseif (mb_strlen($clean_message) > 2000) {
     $clean_message = mb_substr($clean_message, 0, 2000);
 }
 
@@ -67,7 +76,7 @@ if (preg_match('/^Poll:\s*(.+)$/i', $subject, $m)) {
     $subject = '';   // the subject was poll config, not a title
 }
 
-logline("parsed. from='$email' poll=" . ($poll_options ? implode(' | ', $poll_options) : 'none'));
+logline("parsed. from='$email' type=" . ($is_essay ? 'essay' : 'post') . " poll=" . ($poll_options ? implode(' | ', $poll_options) : 'none'));
 
 // ---- This site's config ----
 $cfg = site_secrets($SITE_DOMAIN, $ACCOUNT_ROOT . '/secrets.php');
@@ -99,7 +108,7 @@ if ($mysqli->connect_error) {
     logline("DB error: " . $mysqli->connect_error);
     exit(0);
 }
-$mysqli->set_charset('utf8mb4');
+$mysqli->set_charset(site_charset($cfg));
 
 // ---- Image attachment (first image only) ----
 $image_url = null;

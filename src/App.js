@@ -8,6 +8,7 @@ import Rome from './Rome.js';
 import Socials from './Socials.js';
 import Messages from './Messages.js';
 import Gallery from './Gallery.js';
+import Essay from './Essay.js';
 
 import './App.css';
 
@@ -23,6 +24,7 @@ function App() {
           <Route path="/Socials" element={<Socials/>}/>
           <Route path="/Messages" element={<Messages/>}/>
           <Route path="/Gallery" element={<Gallery/>}/>
+          <Route path="/essay/:id" element={<Essay/>}/>
         </Routes>
       <Footer/>
       </BrowserRouter>

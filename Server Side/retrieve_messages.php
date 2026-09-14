@@ -17,17 +17,43 @@ $offset = max(0, $offset);
 
 $ip_hash = hash('sha256', $_SERVER['REMOTE_ADDR'] ?? '');
 
-// Messages
-$stmt = $conn->prepare(
-    "SELECT id, sender_name, subject, message, image_url, received_at
-     FROM messages ORDER BY received_at DESC LIMIT ? OFFSET ?"
-);
-$stmt->bind_param("ii", $limit, $offset);
+// ?id=N fetches one post in full (the essay page). Otherwise, a page of the feed.
+$single_id = isset($_GET['id']) ? (int)$_GET['id'] : null;
+
+// Essay body in the feed is only used for a short preview, so don't ship the
+// whole thing for every essay on the page.
+const FEED_ESSAY_CHARS = 2000;
+
+if ($single_id !== null) {
+    $stmt = $conn->prepare(
+        "SELECT id, sender_name, subject, message, image_url, received_at
+         FROM messages WHERE id = ?"
+    );
+    $stmt->bind_param("i", $single_id);
+} else {
+    $stmt = $conn->prepare(
+        "SELECT id, sender_name, subject, message, image_url, received_at
+         FROM messages ORDER BY received_at DESC LIMIT ? OFFSET ?"
+    );
+    $stmt->bind_param("ii", $limit, $offset);
+}
 $stmt->execute();
 $result = $stmt->get_result();
 $messages = [];
 $ids = [];
 while ($row = $result->fetch_assoc()) {
+    // A subject of "Essay: Some Title" marks an essay. The subject is stored as
+    // sent, so this also applies to anything already in the database.
+    if (preg_match('/^\s*Essay:\s*(.*)$/is', $row['subject'] ?? '', $em)) {
+        $row['post_type'] = 'essay';
+        $row['title']     = trim($em[1]);
+        if ($single_id === null && mb_strlen($row['message']) > FEED_ESSAY_CHARS) {
+            $row['message'] = mb_substr($row['message'], 0, FEED_ESSAY_CHARS);
+        }
+    } else {
+        $row['post_type'] = 'post';
+        $row['title']     = null;
+    }
     $row['poll'] = null;
     $messages[$row['id']] = $row;
     $ids[] = (int)$row['id'];
@@ -103,6 +129,12 @@ if ($ids) {
 
 $total = (int)$conn->query("SELECT COUNT(*) AS total FROM messages")->fetch_assoc()['total'];
 $conn->close();
+
+if ($single_id !== null) {
+    if (!$messages) site_fail(404, "Post not found");
+    echo json_encode(["messages" => array_values($messages)]);
+    exit;
+}
 
 echo json_encode([
     "messages" => array_values($messages),

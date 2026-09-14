@@ -1,6 +1,9 @@
 import './Home.css';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api, SITE_NAME_SHORT } from './config';
+import RichText from './RichText';
+import { excerpt } from './postText';
 
 const POSTS_PER_PAGE = 50;
 
@@ -70,11 +73,13 @@ export default function Home() {
           <div className='Post'><p>No posts yet.</p></div>
         ) : (
           posts.map(post => (
-            <div key={post.id} className='Post'>
-              {post.message.split('\n').filter(l => l.trim() !== '').map((line, i) => (
-                <p key={i}>{line}</p>
-              ))}
-              {post.image_url && (
+            <div key={post.id} className={post.post_type === 'essay' ? 'Post Post_Essay' : 'Post'}>
+              {post.post_type === 'essay' ? (
+                <EssayPreview post={post} />
+              ) : (
+                <RichText text={post.message} />
+              )}
+              {post.post_type !== 'essay' && post.image_url && (
                 <img className='Post_Image' src={post.image_url} alt="" />
               )}
               {post.poll && (
@@ -93,6 +98,18 @@ export default function Home() {
         )}
       </div>
     </div>
+  );
+}
+
+function EssayPreview({ post }) {
+  const preview = excerpt(post.message, 280);
+  return (
+    <>
+      <span className='Essay_Label'>ESSAY</span>
+      <Link className='Essay_Preview_Title' to={`/essay/${post.id}`}>{post.title || 'Untitled'}</Link>
+      {preview.text && <p className='Essay_Preview_Text'>{preview.text}{preview.truncated ? '…' : ''}</p>}
+      <Link className='Essay_Read' to={`/essay/${post.id}`}>READ ESSAY →</Link>
+    </>
   );
 }
 

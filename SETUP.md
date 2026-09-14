@@ -105,6 +105,42 @@ Two or more options, comma separated. The subject is consumed by the poll and
 doesn't appear as a title. One vote per visitor per poll, deduplicated by a hash
 of their IP.
 
+### Links
+
+Anywhere in the body of a post or essay:
+
+```
+Check out [google](google.com) for more.     ->  "google" links to https://google.com
+https://example.com/page                     ->  linked as itself
+www.example.com                              ->  linked as itself
+```
+
+The part in square brackets is the text shown; the part in parentheses is where
+it goes. `https://` is optional. Links open in a new tab. Only http and https
+targets are linked — anything else is left as plain text.
+
+Outlook turns addresses you type into hyperlinks and appends a copy in angle
+brackets to the plain-text version it sends, e.g.
+`[google](www.google.com<http://www.google.com/>)`. That copy is recognized and
+dropped, so type links normally.
+
+### Essays
+
+```
+Subject: Essay: Why I Stopped Buying New Things
+```
+
+The text after `Essay:` becomes the title and the body is the essay. The feed
+shows the title, a short preview, and READ ESSAY, which opens it at
+`/essay/<id>`. Essays can be about 64,000 characters, versus 2,000 for a normal
+post. Links work the same. An attached image appears at the end.
+
+A subject can be a poll or an essay, not both.
+
+Because the site is shown through GoDaddy's masked forwarding, the address bar
+stays on the .com. To share a particular essay, use its
+`https://<site>.zerofour.tech/essay/<id>` address.
+
 ## Things that bite
 
 **`message.php` must be executable.** SCP and FTP both drop the execute bit, and

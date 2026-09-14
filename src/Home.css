@@ -60,6 +60,57 @@
   cursor: default;
 }
 
+.Post_Link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.Post_Link:hover {
+  color: #555;
+}
+
+.Essay_Label {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: #777;
+  margin-bottom: 6px;
+}
+
+.Essay_Preview_Title {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: bold;
+  line-height: 1.3;
+  color: inherit;
+  text-decoration: none;
+  margin-bottom: 8px;
+  overflow-wrap: break-word;
+}
+
+.Essay_Preview_Title:hover {
+  text-decoration: underline;
+}
+
+.Post .Essay_Preview_Text {
+  color: #333;
+  line-height: 1.55;
+  margin-bottom: 10px;
+}
+
+.Essay_Read {
+  display: inline-block;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: #444;
+  text-decoration: none;
+}
+
+.Essay_Read:hover {
+  text-decoration: underline;
+}
+
 .Post_Image {
   display: block;
   max-width: 450px;

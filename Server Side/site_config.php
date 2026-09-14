@@ -53,6 +53,20 @@ function site_secrets($domain = null, $secrets_path = null) {
     return $all['sites'][$domain] ?? null;
 }
 
+/**
+ * Connection character set for a site. Must match how the site's existing rows
+ * were written, not what the columns claim to be.
+ *
+ * Alex's database is latin1 but has always received raw UTF-8 bytes through a
+ * connection that never declared a charset, so those bytes pass through
+ * untouched. Declaring utf8mb4 there makes MySQL "convert" them and turns ’ into
+ * â€™. That site sets 'charset' => 'latin1' to keep the passthrough. New
+ * databases are genuinely utf8mb4 and use the default.
+ */
+function site_charset($cfg) {
+    return $cfg['db']['charset'] ?? 'utf8mb4';
+}
+
 /** Emit a JSON error and stop. Never leaks config details to the client. */
 function site_fail($code, $message) {
     http_response_code($code);
@@ -70,6 +84,6 @@ function site_db($cfg) {
     if ($conn->connect_error) {
         site_fail(500, "Database connection failed");
     }
-    $conn->set_charset('utf8mb4');
+    $conn->set_charset(site_charset($cfg));
     return $conn;
 }

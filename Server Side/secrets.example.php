@@ -14,7 +14,11 @@ return [
                 'host'   => 'zerofour.tech',
                 'dbname' => '',
                 'user'   => '',
-                'pass'   => ''
+                'pass'   => '',
+                // Optional. Defaults to utf8mb4, which is right for any database
+                // created from schema.sql. Only set 'latin1' for a legacy
+                // database whose rows were written without a declared charset.
+                // 'charset' => 'utf8mb4',
             ],
 
             // Lowercase addresses allowed to post by email.
