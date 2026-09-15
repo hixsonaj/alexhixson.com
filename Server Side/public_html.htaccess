@@ -12,6 +12,12 @@
   RewriteEngine On
   RewriteBase /
 
+  # ---- certificate validation ----
+  # Serve ACME and ssl.com validation files from this folder for every name,
+  # before any per-site routing. Let's Encrypt renewals (acme.sh, webroot
+  # ~/public_html) and cPanel's own port-80 handling both expect them here.
+  RewriteRule ^\.well-known/(acme-challenge|pki-validation)/ - [L]
+
   # ---- alexhixson.com -> alexhixson.zerofour.tech/ ----
   # Real files and folders pass straight through.
   RewriteCond %{HTTP_HOST} ^(www\.)?alexhixson\.com$ [NC]

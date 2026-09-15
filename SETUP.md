@@ -177,6 +177,45 @@ Dates and reply times come from the database server's clock, which is not your
 time zone. They're right to the day but a reply's time can be off by an hour or
 more, depending on the time of year.
 
+## Domains and certificates
+
+The hosting plan allows no addon domains, so each `.com` is a cPanel **alias** of
+zerofour.tech. An alias always serves `public_html`, and
+`public_html/.htaccess` (source: `Server Side/public_html.htaccess`) routes each
+`.com` to its site folder. The PHP accepts the `.com` through `aliases` in
+`secrets.php`.
+
+An alias shares zerofour.tech's web server entry, and cPanel allows one
+certificate per entry. **Installing a certificate for just `alexhixson.com`
+replaces zerofour.tech's** — this happened once. So zerofour.tech and every
+aliased `.com` share one Let's Encrypt certificate, managed by acme.sh:
+
+| Certificate | Names | Managed by | Renews |
+|---|---|---|---|
+| zerofour.tech | zerofour.tech, alexhixson.com (+ www each) | acme.sh | automatically, ~every 60 days |
+| alexhixson.zerofour.tech | + www | ssl.com, manual | by hand |
+| leahhixson.zerofour.tech | + www | ssl.com, manual | by hand |
+
+acme.sh lives in `~/.acme.sh` on the server. A cron job checks four times a day;
+when renewal is due it renews and reinstalls through cPanel on its own.
+
+Check it:
+
+```bash
+ssh vuc923ya50qu@zerofour.tech "~/.acme.sh/acme.sh --list"
+```
+
+**Adding leahhixson.com.** Add it as an alias in cPanel (Domains → Create, leave
+"Share document root" checked), point its DNS at `198.12.232.172`, then reissue
+with every name — the list replaces the old one, so include all of them:
+
+```bash
+ssh vuc923ya50qu@zerofour.tech '~/.acme.sh/acme.sh --issue --force --server letsencrypt --keylength 2048 -d zerofour.tech -d www.zerofour.tech -d alexhixson.com -d www.alexhixson.com -d leahhixson.com -d www.leahhixson.com -w ~/public_html && ~/.acme.sh/acme.sh --deploy -d zerofour.tech --deploy-hook cpanel_uapi'
+```
+
+Validation files are served from `public_html/.well-known/` for every name —
+the first rule in `.htaccess` makes sure of that.
+
 ## Things that bite
 
 **`message.php` must be executable.** SCP and FTP both drop the execute bit, and
