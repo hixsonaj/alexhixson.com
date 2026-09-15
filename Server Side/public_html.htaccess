@@ -1,0 +1,44 @@
+# public_html/.htaccess — the main zerofour.tech document root.
+#
+# The hosting plan allows no addon domains, only aliases, and an alias always
+# serves this folder. These rules send each site's .com to its own folder, so
+# alexhixson.com serves exactly what alexhixson.zerofour.tech serves.
+#
+# Apache also applies this file to the subdomain folders beneath it, which is
+# where their single-page-app fallback comes from. Every rule below the host
+# blocks is the original zerofour.tech config, unchanged.
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # ---- alexhixson.com -> alexhixson.zerofour.tech/ ----
+  # Real files and folders pass straight through.
+  RewriteCond %{HTTP_HOST} ^(www\.)?alexhixson\.com$ [NC]
+  RewriteCond %{REQUEST_URI} !^/alexhixson\.zerofour\.tech/
+  RewriteCond %{DOCUMENT_ROOT}/alexhixson.zerofour.tech%{REQUEST_URI} -f [OR]
+  RewriteCond %{DOCUMENT_ROOT}/alexhixson.zerofour.tech%{REQUEST_URI} -d
+  RewriteRule ^(.*)$ alexhixson.zerofour.tech/$1 [L]
+  # Anything else is an app route like /essay/12: serve that site's index.html,
+  # not zerofour.tech's.
+  RewriteCond %{HTTP_HOST} ^(www\.)?alexhixson\.com$ [NC]
+  RewriteCond %{REQUEST_URI} !^/alexhixson\.zerofour\.tech/
+  RewriteRule ^ alexhixson.zerofour.tech/index.html [L]
+
+  # ---- leahhixson.com -> leahhixson.zerofour.tech/ ----
+  RewriteCond %{HTTP_HOST} ^(www\.)?leahhixson\.com$ [NC]
+  RewriteCond %{REQUEST_URI} !^/leahhixson\.zerofour\.tech/
+  RewriteCond %{DOCUMENT_ROOT}/leahhixson.zerofour.tech%{REQUEST_URI} -f [OR]
+  RewriteCond %{DOCUMENT_ROOT}/leahhixson.zerofour.tech%{REQUEST_URI} -d
+  RewriteRule ^(.*)$ leahhixson.zerofour.tech/$1 [L]
+  RewriteCond %{HTTP_HOST} ^(www\.)?leahhixson\.com$ [NC]
+  RewriteCond %{REQUEST_URI} !^/leahhixson\.zerofour\.tech/
+  RewriteRule ^ leahhixson.zerofour.tech/index.html [L]
+
+  # ---- original zerofour.tech single-page-app fallback ----
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-l
+  RewriteRule . /index.html [L]
+</IfModule>
