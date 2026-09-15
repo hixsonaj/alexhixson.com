@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from './config';
 import RichText from './RichText';
+import Replies from './Replies';
 
 export default function Essay() {
   const { id } = useParams();
@@ -50,6 +51,14 @@ export default function Essay() {
         <RichText text={essay.message} />
       </div>
       {essay.image_url && <img className='Essay_Image' src={essay.image_url} alt='' />}
+      {essay.replies && essay.replies.length > 0 && (
+        <section className='Essay_Replies'>
+          <h2 className='Essay_Replies_Heading'>
+            {essay.replies.length} {essay.replies.length === 1 ? 'REPLY' : 'REPLIES'}
+          </h2>
+          <Replies replies={essay.replies} />
+        </section>
+      )}
     </article>
   );
 }

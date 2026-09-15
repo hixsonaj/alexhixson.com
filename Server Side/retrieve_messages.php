@@ -27,13 +27,14 @@ const FEED_ESSAY_CHARS = 2000;
 if ($single_id !== null) {
     $stmt = $conn->prepare(
         "SELECT id, sender_name, subject, message, image_url, received_at
-         FROM messages WHERE id = ?"
+         FROM messages WHERE id = ? AND parent_id IS NULL"
     );
     $stmt->bind_param("i", $single_id);
 } else {
     $stmt = $conn->prepare(
         "SELECT id, sender_name, subject, message, image_url, received_at
-         FROM messages ORDER BY received_at DESC LIMIT ? OFFSET ?"
+         FROM messages WHERE parent_id IS NULL
+         ORDER BY received_at DESC LIMIT ? OFFSET ?"
     );
     $stmt->bind_param("ii", $limit, $offset);
 }
@@ -55,6 +56,7 @@ while ($row = $result->fetch_assoc()) {
         $row['title']     = null;
     }
     $row['poll'] = null;
+    $row['replies'] = [];
     $messages[$row['id']] = $row;
     $ids[] = (int)$row['id'];
 }
@@ -127,7 +129,31 @@ if ($ids) {
     }
 }
 
-$total = (int)$conn->query("SELECT COUNT(*) AS total FROM messages")->fetch_assoc()['total'];
+// Replies for every post on this page, in one query, oldest first.
+if ($ids) {
+    $in = implode(',', array_fill(0, count($ids), '?'));
+    $rs = $conn->prepare(
+        "SELECT id, parent_id, message, image_url, received_at
+         FROM messages WHERE parent_id IN ($in) ORDER BY received_at ASC, id ASC"
+    );
+    $rs->bind_param(str_repeat('i', count($ids)), ...$ids);
+    $rs->execute();
+    $rr = $rs->get_result();
+    while ($reply = $rr->fetch_assoc()) {
+        $pid = (int)$reply['parent_id'];
+        if (!isset($messages[$pid])) continue;
+        $messages[$pid]['replies'][] = [
+            'id'          => (int)$reply['id'],
+            'message'     => $reply['message'],
+            'image_url'   => $reply['image_url'],
+            'received_at' => $reply['received_at'],
+        ];
+    }
+    $rs->close();
+}
+
+// Top-level posts only — replies live inside their post, not in the count.
+$total = (int)$conn->query("SELECT COUNT(*) AS total FROM messages WHERE parent_id IS NULL")->fetch_assoc()['total'];
 $conn->close();
 
 if ($single_id !== null) {

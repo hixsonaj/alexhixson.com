@@ -13,8 +13,15 @@ CREATE TABLE IF NOT EXISTS `messages` (
   `message`      text         DEFAULT NULL,
   `image_url`    varchar(500) DEFAULT NULL,
   `received_at`  timestamp    NOT NULL DEFAULT current_timestamp(),
+  -- Threads (see migrations/002_threads.sql)
+  `parent_id`        int(11)      DEFAULT NULL,
+  `email_message_id` varchar(255) DEFAULT NULL,
+  `thread_key`       varchar(40)  DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `idx_received_at` (`received_at`)
+  KEY `idx_received_at` (`received_at`),
+  KEY `idx_parent_id` (`parent_id`),
+  KEY `idx_email_message_id` (`email_message_id`),
+  KEY `idx_thread_key` (`thread_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `polls` (

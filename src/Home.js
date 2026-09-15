@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, SITE_NAME_SHORT } from './config';
 import RichText from './RichText';
+import Replies from './Replies';
 import { excerpt } from './postText';
 
 const POSTS_PER_PAGE = 50;
@@ -88,6 +89,7 @@ export default function Home() {
               <span className='Post_Date'>
                 {new Date(post.received_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
+              {post.post_type !== 'essay' && <Replies replies={post.replies} />}
             </div>
           ))
         )}
@@ -108,6 +110,11 @@ function EssayPreview({ post }) {
       <Link className='Essay_Preview_Title' to={`/essay/${post.id}`}>{post.title || 'Untitled'}</Link>
       {preview.text && <p className='Essay_Preview_Text'>{preview.text}{preview.truncated ? '…' : ''}</p>}
       <Link className='Essay_Read' to={`/essay/${post.id}`}>READ ENTRY →</Link>
+      {post.replies && post.replies.length > 0 && (
+        <span className='Essay_Reply_Count'>
+          {post.replies.length} {post.replies.length === 1 ? 'reply' : 'replies'}
+        </span>
+      )}
     </>
   );
 }

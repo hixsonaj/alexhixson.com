@@ -40,6 +40,8 @@ domain, so a stale or wrong-site build can't reach the server.
 
 **1. Database** — cPanel > MySQL Databases. Create the database and a user, grant
 all privileges. Then phpMyAdmin > SQL, paste `Server Side/schema.sql`.
+`schema.sql` is always current; the files in `Server Side/migrations/` are only
+for bringing an existing database up to date.
 
 **2. Secrets** — add a block to `secrets.php` keyed by domain (see
 `secrets.example.php`), then upload to the account root:
@@ -131,7 +133,7 @@ Subject: Essay: Why I Stopped Buying New Things
 ```
 
 The text after `Essay:` becomes the title and the body is the essay. The feed
-shows the title, a short preview, and READ ESSAY, which opens it at
+shows the title, a short preview, and READ ENTRY, which opens it at
 `/essay/<id>`. Essays can be about 64,000 characters, versus 2,000 for a normal
 post. Links work the same. An attached image appears at the end.
 
@@ -140,6 +142,40 @@ A subject can be a poll or an essay, not both.
 Because the site is shown through GoDaddy's masked forwarding, the address bar
 stays on the .com. To share a particular essay, use its
 `https://<site>.zerofour.tech/essay/<id>` address.
+
+### Replies
+
+Reply to the email of a post — the copy in your Sent folder — and send it to the
+same feed address. The reply appears under that post, oldest first, with its
+date and time. Under an essay, the feed shows a reply count and the essay page
+shows the replies.
+
+Only the new text is posted. Quoted history below it is removed: Outlook's
+`From: / Sent:` block, `-----Original Message-----`, Gmail's `On … wrote:`, `>`
+quoted lines, and sign-offs like "Sent from my iPhone". Links and an image work
+in a reply the same as in a post.
+
+How a reply finds its post, most reliable first:
+
+1. **In-Reply-To / References** headers, matched to the Message-ID stored with
+   each post.
+2. **Outlook's Thread-Index**, which every message in a conversation shares.
+3. **The quoted original text**, compared against the 300 most recent posts. This
+   is what makes replying work for posts sent before threads existed, since
+   those were stored without a Message-ID.
+
+A reply to a reply joins the original post's thread; threads are one level
+deep. If nothing matches, the text is posted as a new post and the mail log
+says so. Replies can't create polls or essays.
+
+Posting still requires an address in `allowed_senders` — replies are yours and
+Leah's, not public comments.
+
+### Times
+
+Dates and reply times come from the database server's clock, which is not your
+time zone. They're right to the day but a reply's time can be off by an hour or
+more, depending on the time of year.
 
 ## Things that bite
 

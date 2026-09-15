@@ -66,6 +66,8 @@ if [[ $do_mail -eq 1 ]]; then
   echo "  mail pipe"
   ssh "$SSH_TARGET" "mkdir -p $REMOTE_MAIL"
   scp -q "$SRV/message.php" "$SSH_TARGET:$REMOTE_MAIL/message.php"
+  # Shared by every site's pipe, so it lives at the account root.
+  scp -q "$SRV/mail_reply.php" "$SSH_TARGET:mail_reply.php"
   # Without this the pipe silently never executes.
   ssh "$SSH_TARGET" "chmod 755 $REMOTE_MAIL/message.php"
   echo "    chmod 755 message.php"

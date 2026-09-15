@@ -204,3 +204,54 @@
     font-size: 0.7rem;
   }
 }
+
+/* Replies */
+.Replies {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.Reply {
+  border-left: 2px solid #aeaeae;
+  padding: 2px 0 2px 14px;
+  margin-left: 4px;
+}
+
+.Post .Reply p {
+  font-size: 0.9rem;
+  margin: 0 0 3px;
+}
+
+.Reply_Image {
+  display: block;
+  max-width: 300px;
+  max-height: 300px;
+  width: 100%;
+  object-fit: contain;
+  margin-top: 6px;
+}
+
+.Reply_Date {
+  display: block;
+  font-size: 0.7rem;
+  color: #888888;
+  margin-top: 4px;
+}
+
+.Essay_Reply_Count {
+  font-size: 0.75rem;
+  color: #888888;
+  margin-left: 12px;
+}
+
+@media (max-width: 600px) {
+  .Reply {
+    padding-left: 10px;
+    margin-left: 0;
+  }
+  .Post .Reply p {
+    font-size: 0.8rem;
+  }
+}

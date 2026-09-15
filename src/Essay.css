@@ -48,6 +48,25 @@
   margin-top: 16px;
 }
 
+.Essay_Replies {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #aeaeae;
+}
+
+.Essay_Replies_Heading {
+  font-size: 0.75rem;
+  font-weight: normal;
+  letter-spacing: 0.1em;
+  color: #666;
+  margin: 0 0 14px;
+}
+
+.Essay_Replies .Reply p {
+  margin: 0 0 6px;
+  line-height: 1.6;
+}
+
 .Essay_Status {
   margin-bottom: 20px;
 }
