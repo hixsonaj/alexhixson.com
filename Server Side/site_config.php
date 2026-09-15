@@ -50,7 +50,15 @@ function site_secrets($domain = null, $secrets_path = null) {
     if (!isset($all['sites'])) return $all;   // legacy flat shape
 
     $domain = $domain !== null ? strtolower($domain) : current_domain();
-    return $all['sites'][$domain] ?? null;
+    if (isset($all['sites'][$domain])) return $all['sites'][$domain];
+
+    // A site can also answer to other names, e.g. its .com pointed straight at
+    // this server. Aliases are listed explicitly; still no fallback.
+    foreach ($all['sites'] as $cfg) {
+        $aliases = array_map('strtolower', $cfg['aliases'] ?? []);
+        if (in_array($domain, $aliases, true)) return $cfg;
+    }
+    return null;
 }
 
 /**

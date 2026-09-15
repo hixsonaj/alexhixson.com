@@ -10,6 +10,9 @@ return [
     'sites' => [
 
         'example.zerofour.tech' => [
+            // Optional: other domains pointed at this site, like its .com.
+            // Leave off the www. — it's stripped before matching.
+            'aliases' => ['example.com'],
             'db' => [
                 'host'   => 'zerofour.tech',
                 'dbname' => '',
