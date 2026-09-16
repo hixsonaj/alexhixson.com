@@ -171,6 +171,41 @@ says so. Replies can't create polls or essays.
 Posting still requires an address in `allowed_senders` — replies are yours and
 Leah's, not public comments.
 
+### Deleting a post
+
+Reply to the post's email, change the subject to just `delete`, and send it to
+the feed address. Any `Re:` your mail client adds is ignored, so `Re: delete`
+works. The body doesn't matter.
+
+- Deleting a **post** also hides its replies.
+- Deleting a **reply** hides only that reply.
+- The delete email is never posted. If nothing matches, the mail log says so and
+  nothing changes — the word "delete" won't appear as a post.
+- Only addresses in `allowed_senders` can do it, same as posting.
+
+Posts are **hidden, not destroyed**: `deleted_at` is set and every query skips
+them. Matching a reply to an older post is partly fuzzy, so a wrong match has to
+stay recoverable.
+
+Bring one back (get the id from the mail log line `deleted post <id>`):
+
+```bash
+ssh vuc923ya50qu@zerofour.tech 'php -r '"'"'$s=include "secrets.php";$d=$s["sites"]["alexhixson.zerofour.tech"]["db"];$c=new mysqli($d["host"],$d["user"],$d["pass"],$d["dbname"]);$c->query("UPDATE messages SET deleted_at=NULL WHERE id=123 OR parent_id=123");echo $c->affected_rows." restored\n";'"'"''
+```
+
+See what's hidden, or purge hidden posts older than 30 days for good:
+
+```bash
+ssh vuc923ya50qu@zerofour.tech 'php -r '"'"'$s=include "secrets.php";$d=$s["sites"]["alexhixson.zerofour.tech"]["db"];$c=new mysqli($d["host"],$d["user"],$d["pass"],$d["dbname"]);$r=$c->query("SELECT id,deleted_at,LEFT(message,50) t FROM messages WHERE deleted_at IS NOT NULL");while($x=$r->fetch_row())printf("%s  %s  %s\n",...$x);'"'"''
+```
+
+```bash
+ssh vuc923ya50qu@zerofour.tech 'php -r '"'"'$s=include "secrets.php";$d=$s["sites"]["alexhixson.zerofour.tech"]["db"];$c=new mysqli($d["host"],$d["user"],$d["pass"],$d["dbname"]);$c->query("DELETE FROM polls WHERE message_id IN (SELECT id FROM messages WHERE deleted_at < NOW() - INTERVAL 30 DAY)");$c->query("DELETE FROM messages WHERE deleted_at < NOW() - INTERVAL 30 DAY");echo $c->affected_rows." purged\n";'"'"''
+```
+
+Purging leaves any attached image file in `post-images/`; delete those by hand
+if you care.
+
 ### Times
 
 Dates and reply times come from the database server's clock, which is not your
@@ -190,11 +225,14 @@ certificate per entry. **Installing a certificate for just `alexhixson.com`
 replaces zerofour.tech's** — this happened once. So zerofour.tech and every
 aliased `.com` share one Let's Encrypt certificate, managed by acme.sh:
 
-| Certificate | Names | Managed by | Renews |
-|---|---|---|---|
-| zerofour.tech | zerofour.tech, alexhixson.com (+ www each) | acme.sh | automatically, ~every 60 days |
-| alexhixson.zerofour.tech | + www | ssl.com, manual | by hand |
-| leahhixson.zerofour.tech | + www | ssl.com, manual | by hand |
+| Certificate | Names | Renews |
+|---|---|---|
+| zerofour.tech | zerofour.tech, alexhixson.com (+ www each) | automatically, ~every 60 days |
+| alexhixson.zerofour.tech | that name only | automatically |
+| leahhixson.zerofour.tech | that name only | automatically |
+
+All three are Let's Encrypt via acme.sh; nothing here needs ssl.com any more. The
+`www.` forms of the two subdomains aren't in DNS, so they're not on a certificate.
 
 acme.sh lives in `~/.acme.sh` on the server. A cron job checks four times a day;
 when renewal is due it renews and reinstalls through cPanel on its own.

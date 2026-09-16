@@ -123,6 +123,14 @@ check('Re: subject', reply_subject_is_reply('Re: Essay: Title'), true);
 check('RE[2]: subject', reply_subject_is_reply('RE[2]: hi'), true);
 check('not a reply subject', reply_subject_is_reply('Essay: Rebuilding my bike'), false);
 
+echo "--- delete subjects ---\n";
+foreach (['delete', 'Delete', 'DELETE', ' delete ', 'Re: delete', 'RE: Delete', 'Re: Fwd: delete', 'delete.', 'Remove'] as $s) {
+    check("\"$s\" is a delete", reply_subject_is_delete($s), true);
+}
+foreach (['delete this one', 'Re: please delete', 'deleted', 'Essay: delete', 'Poll: delete, keep', '', 'Re: Test thread 1', 'undelete'] as $s) {
+    check("\"$s\" is NOT a delete", reply_subject_is_delete($s), false);
+}
+
 echo "--- matching quoted text to a post ---\n";
 check('curly vs straight quotes', reply_quote_matches("Y'all rock with the LinkedIn and zero four profile pic? I gotta go to New York", "Y’all rock with the LinkedIn and zero four profile pic? I gotta go to New York"), true);
 check('rewrapped long post', reply_quote_matches("Would people even want a renewed\nvolume by speed app? I had Claude", "Would people even want a renewed volume by speed app? I had Claude build it"), true);

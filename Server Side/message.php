@@ -58,6 +58,9 @@ $reply_to_ids  = array_merge(
 );
 [$thread_key, $thread_is_reply] = reply_thread_index($mail->getHeader('Thread-Index')?->getRawValue());
 $looks_like_reply = reply_subject_is_reply($subject) || $reply_to_ids || $thread_is_reply;
+// "delete" as the subject removes the post being replied to, rather than posting.
+$is_delete = reply_subject_is_delete($subject);
+if ($is_delete) $looks_like_reply = true;
 
 // ---- Text content ----
 $text = $mail->getTextContent();
@@ -131,7 +134,8 @@ $mysqli->set_charset(site_charset($cfg));
 // ---- Which post is this a reply to? ----
 // Replies always attach to the top-level post, so a reply to a reply joins the
 // same thread rather than nesting.
-$parent_id = null;
+$parent_id = null;   // thread root, where a reply gets filed
+$match_id  = null;   // the exact message replied to, which is what delete targets
 $match_how = null;
 
 $root_of = function ($row) {
@@ -147,7 +151,9 @@ if ($looks_like_reply && $reply_to_ids) {
     foreach ($q->get_result()->fetch_all(MYSQLI_ASSOC) as $row) $found[$row['email_message_id']] = $row;
     $q->close();
     foreach ($reply_to_ids as $rid) {           // In-Reply-To first, then nearest References
-        if (isset($found[$rid])) { $parent_id = $root_of($found[$rid]); $match_how = 'message-id'; break; }
+        if (isset($found[$rid])) {
+            $match_id = (int)$found[$rid]['id']; $parent_id = $root_of($found[$rid]); $match_how = 'message-id'; break;
+        }
     }
 }
 
@@ -155,19 +161,45 @@ if ($looks_like_reply && $parent_id === null && $thread_key && $thread_is_reply)
     $q = $mysqli->prepare("SELECT id, parent_id FROM messages WHERE thread_key = ? ORDER BY received_at ASC LIMIT 1");
     $q->bind_param('s', $thread_key);
     $q->execute();
-    if ($row = $q->get_result()->fetch_assoc()) { $parent_id = $root_of($row); $match_how = 'thread-index'; }
+    if ($row = $q->get_result()->fetch_assoc()) {
+        $match_id = (int)$row['id']; $parent_id = $root_of($row); $match_how = 'thread-index';
+    }
     $q->close();
 }
 
 if ($looks_like_reply && $parent_id === null && $quoted_original !== '') {
     // Posts sent before ids were stored. Newest first, so a repeated phrase
     // matches the most recent post that used it.
-    $res = $mysqli->query("SELECT id, parent_id, message FROM messages ORDER BY received_at DESC LIMIT 300");
+    $res = $mysqli->query("SELECT id, parent_id, message FROM messages WHERE deleted_at IS NULL ORDER BY received_at DESC LIMIT 300");
     while ($row = $res->fetch_assoc()) {
         if (reply_quote_matches($quoted_original, $row['message'])) {
-            $parent_id = $root_of($row); $match_how = 'quoted-text'; break;
+            $match_id = (int)$row['id']; $parent_id = $root_of($row); $match_how = 'quoted-text'; break;
         }
     }
+}
+
+// ---- "delete" ----
+// Hides the post rather than destroying it: matching a reply to an old post is
+// partly fuzzy, so a wrong match must stay recoverable. Purge for real later
+// with the command in SETUP.md.
+if ($is_delete) {
+    if ($match_id === null) {
+        logline("delete requested but no matching post was found — nothing changed, nothing posted");
+        $mysqli->close();
+        exit(0);
+    }
+    // Hiding a post hides its replies too; hiding a reply affects only itself.
+    $ds = $mysqli->prepare(
+        "UPDATE messages SET deleted_at = NOW()
+         WHERE (id = ? OR parent_id = ?) AND deleted_at IS NULL"
+    );
+    $ds->bind_param("ii", $match_id, $match_id);
+    $ds->execute();
+    $hidden = $ds->affected_rows;
+    $ds->close();
+    logline("deleted post $match_id (matched by $match_how) — $hidden row(s) hidden");
+    $mysqli->close();
+    exit(0);
 }
 
 if ($looks_like_reply) {

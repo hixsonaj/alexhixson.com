@@ -27,13 +27,13 @@ const FEED_ESSAY_CHARS = 2000;
 if ($single_id !== null) {
     $stmt = $conn->prepare(
         "SELECT id, sender_name, subject, message, image_url, received_at
-         FROM messages WHERE id = ? AND parent_id IS NULL"
+         FROM messages WHERE id = ? AND parent_id IS NULL AND deleted_at IS NULL"
     );
     $stmt->bind_param("i", $single_id);
 } else {
     $stmt = $conn->prepare(
         "SELECT id, sender_name, subject, message, image_url, received_at
-         FROM messages WHERE parent_id IS NULL
+         FROM messages WHERE parent_id IS NULL AND deleted_at IS NULL
          ORDER BY received_at DESC LIMIT ? OFFSET ?"
     );
     $stmt->bind_param("ii", $limit, $offset);
@@ -134,7 +134,7 @@ if ($ids) {
     $in = implode(',', array_fill(0, count($ids), '?'));
     $rs = $conn->prepare(
         "SELECT id, parent_id, message, image_url, received_at
-         FROM messages WHERE parent_id IN ($in) ORDER BY received_at ASC, id ASC"
+         FROM messages WHERE parent_id IN ($in) AND deleted_at IS NULL ORDER BY received_at ASC, id ASC"
     );
     $rs->bind_param(str_repeat('i', count($ids)), ...$ids);
     $rs->execute();
@@ -153,7 +153,7 @@ if ($ids) {
 }
 
 // Top-level posts only — replies live inside their post, not in the count.
-$total = (int)$conn->query("SELECT COUNT(*) AS total FROM messages WHERE parent_id IS NULL")->fetch_assoc()['total'];
+$total = (int)$conn->query("SELECT COUNT(*) AS total FROM messages WHERE parent_id IS NULL AND deleted_at IS NULL")->fetch_assoc()['total'];
 $conn->close();
 
 if ($single_id !== null) {

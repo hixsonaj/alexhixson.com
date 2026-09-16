@@ -38,6 +38,20 @@ function reply_subject_is_reply($subject) {
     return (bool)preg_match('/^\s*(re|aw|sv|antw)(\[\d+\])?\s*:/i', (string)$subject);
 }
 
+/**
+ * True when the subject is just "delete" — the instruction to remove the post
+ * being replied to. Any Re:/Fwd: prefixes the mail client added are ignored, so
+ * editing the subject to "delete" is enough.
+ */
+function reply_subject_is_delete($subject) {
+    $s = trim((string)$subject);
+    // Strip any stack of reply/forward prefixes: "Re: Fwd: delete"
+    while (preg_match('/^\s*(re|aw|sv|antw|fwd?|wg)(\[\d+\])?\s*:\s*(.*)$/is', $s, $m)) {
+        $s = $m[3];
+    }
+    return (bool)preg_match('/^(delete|remove)[.!]?$/i', trim($s));
+}
+
 /** Collapse whitespace and quote styles so text from different sources compares equal. */
 function reply_normalize($text) {
     $t = str_replace(["\u{2018}", "\u{2019}", "\u{201C}", "\u{201D}", "\u{00A0}"], ["'", "'", '"', '"', ' '], (string)$text);
