@@ -206,6 +206,28 @@ ssh vuc923ya50qu@zerofour.tech 'php -r '"'"'$s=include "secrets.php";$d=$s["site
 Purging leaves any attached image file in `post-images/`; delete those by hand
 if you care.
 
+### Who voted
+
+`poll_votes.ip_address` holds the voter's address. Voters stay anonymous to each
+other — nothing on the site shows an address — but you can see who is who:
+
+```bash
+ssh vuc923ya50qu@zerofour.tech 'php -r '"'"'$s=include "secrets.php";$d=$s["sites"]["alexhixson.zerofour.tech"]["db"];$c=new mysqli($d["host"],$d["user"],$d["pass"],$d["dbname"]);$r=$c->query("SELECT v.voted_at,v.ip_address,v.poll_id,v.option_index,p.options FROM poll_votes v JOIN polls p ON p.id=v.poll_id ORDER BY v.id DESC");while($x=$r->fetch_assoc()){$o=json_decode($x["options"],true);printf("%s  %-16s poll %s: %s\n",$x["voted_at"],$x["ip_address"]??"(unknown)",$x["poll_id"],$o[$x["option_index"]]??"?");}'"'"''
+```
+
+`ip_hash` is still written and still carries the one-vote-per-poll key. Votes
+from before this change show `(unknown)` unless `backfill_vote_ips.php` could
+recover them from the access logs — it only matches a candidate whose hash
+equals the stored one, and older logs rotate away:
+
+```bash
+ssh vuc923ya50qu@zerofour.tech 'php backfill_vote_ips.php alexhixson.zerofour.tech'        # dry run
+ssh vuc923ya50qu@zerofour.tech 'php backfill_vote_ips.php alexhixson.zerofour.tech --write'
+```
+
+If the site ever sits behind a proxy or CDN, `REMOTE_ADDR` becomes the proxy's
+address and `submit_vote.php` needs the forwarded header instead.
+
 ### Times
 
 Dates and reply times come from the database server's clock, which is not your

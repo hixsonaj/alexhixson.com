@@ -40,6 +40,9 @@ CREATE TABLE IF NOT EXISTS `poll_votes` (
   `id`           int(11)     NOT NULL AUTO_INCREMENT,
   `poll_id`      int(11)     NOT NULL,
   `option_index` int(11)     NOT NULL,
+  -- The voter's address, for looking up who voted (see migrations/004_vote_ip.sql).
+  `ip_address`   varchar(45) DEFAULT NULL,
+  -- Retained because the one-vote-per-poll key below is built on it.
   `ip_hash`      varchar(64) NOT NULL,
   `voted_at`     timestamp   NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),

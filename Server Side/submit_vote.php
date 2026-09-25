@@ -16,6 +16,10 @@ if ($poll_id === null || $option_idx === null) {
     site_fail(400, "Missing poll_id or option_index");
 }
 
+$ip = $_SERVER['REMOTE_ADDR'] ?? '';
+if (!filter_var($ip, FILTER_VALIDATE_IP)) $ip = null;   // never store junk
+// The hash still carries the one-vote-per-poll unique key, including for votes
+// cast before addresses were stored. ip_address is what you read.
 $ip_hash = hash('sha256', $_SERVER['REMOTE_ADDR'] ?? '');
 $conn = site_db(site_secrets());
 
@@ -34,8 +38,8 @@ if ($option_idx < 0 || $option_idx >= count($options)) {
 }
 
 // INSERT IGNORE + the UNIQUE KEY on (poll_id, ip_hash) makes a second vote a no-op.
-$vs = $conn->prepare("INSERT IGNORE INTO poll_votes (poll_id, option_index, ip_hash) VALUES (?, ?, ?)");
-$vs->bind_param("iis", $poll_id, $option_idx, $ip_hash);
+$vs = $conn->prepare("INSERT IGNORE INTO poll_votes (poll_id, option_index, ip_address, ip_hash) VALUES (?, ?, ?, ?)");
+$vs->bind_param("iiss", $poll_id, $option_idx, $ip, $ip_hash);
 $vs->execute();
 $new_vote = $vs->affected_rows > 0;
 $vs->close();
