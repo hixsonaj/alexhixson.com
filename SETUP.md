@@ -104,8 +104,8 @@ Poll: pizza, tacos, sushi
 ```
 
 Two or more options, comma separated. The subject is consumed by the poll and
-doesn't appear as a title. One vote per visitor per poll, deduplicated by a hash
-of their IP.
+doesn't appear as a title. One vote per visitor per poll, by IP address — see
+"Who voted" below.
 
 ### Links
 
@@ -139,9 +139,8 @@ post. Links work the same. An attached image appears at the end.
 
 A subject can be a poll or an essay, not both.
 
-Because the site is shown through GoDaddy's masked forwarding, the address bar
-stays on the .com. To share a particular essay, use its
-`https://<site>.zerofour.tech/essay/<id>` address.
+Share an essay with `https://alexhixson.com/essay/<id>`. Direct links work now
+that the domain points at the server instead of GoDaddy forwarding.
 
 ### Replies
 
