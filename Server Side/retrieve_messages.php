@@ -31,17 +31,27 @@ if ($single_id !== null) {
     );
     $stmt->bind_param("i", $single_id);
 } else {
+    // A bumped post occupies two places in the feed: once at the top under its
+    // bump, and once where it was originally written. The union gives each
+    // appearance its own row, tagged so the caller can tell them apart.
     $stmt = $conn->prepare(
-        "SELECT id, sender_name, subject, message, image_url, received_at, bumped_at
-         FROM messages WHERE parent_id IS NULL AND deleted_at IS NULL
-         ORDER BY COALESCE(bumped_at, received_at) DESC LIMIT ? OFFSET ?"
+        "(SELECT id, sender_name, subject, message, image_url, received_at, bumped_at,
+                 received_at AS sort_at, 0 AS is_bump
+            FROM messages WHERE parent_id IS NULL AND deleted_at IS NULL)
+         UNION ALL
+         (SELECT id, sender_name, subject, message, image_url, received_at, bumped_at,
+                 bumped_at AS sort_at, 1 AS is_bump
+            FROM messages WHERE parent_id IS NULL AND deleted_at IS NULL
+             AND bumped_at IS NOT NULL)
+         ORDER BY sort_at DESC LIMIT ? OFFSET ?"
     );
     $stmt->bind_param("ii", $limit, $offset);
 }
 $stmt->execute();
 $result = $stmt->get_result();
-$messages = [];
-$ids = [];
+$messages = [];   // one entry per appearance, in display order
+$byId     = [];   // id => indexes into $messages, since a post can appear twice
+$ids      = [];
 while ($row = $result->fetch_assoc()) {
     // A subject of "Essay: Some Title" marks an essay. The subject is stored as
     // sent, so this also applies to anything already in the database.
@@ -55,13 +65,21 @@ while ($row = $result->fetch_assoc()) {
         $row['post_type'] = 'post';
         $row['title']     = null;
     }
+    // Only the bumped appearance carries the forward comments; the one sitting
+    // in its original place reads as it always did.
+    // The essay page is a single post and always shows its notes.
+    $row['is_bump'] = $single_id !== null ? true : (bool)(int)($row['is_bump'] ?? 0);
     $row['poll'] = null;
     $row['notes'] = [];      // comments that arrived with a forward, shown above
     $row['replies'] = [];    // ordinary replies, shown below
-    $messages[$row['id']] = $row;
-    $ids[] = (int)$row['id'];
+    unset($row['sort_at']);
+
+    $messages[] = $row;
+    $byId[(int)$row['id']][] = count($messages) - 1;
+    $ids[(int)$row['id']] = (int)$row['id'];
 }
 $stmt->close();
+$ids = array_values($ids);   // distinct, so the lookups below don't repeat work
 
 // Polls for this page of messages, in three queries total rather than three per
 // message — at 100 posts the old per-message version issued 300 round trips.
@@ -123,9 +141,9 @@ if ($ids) {
 
         foreach ($polls as $pid => $p) {
             $mid = $p['message_id'];
-            if (!isset($messages[$mid])) continue;
+            if (!isset($byId[$mid])) continue;
             unset($p['message_id']);
-            $messages[$mid]['poll'] = ['id' => $pid] + $p;
+            foreach ($byId[$mid] as $i) $messages[$i]['poll'] = ['id' => $pid] + $p;
         }
     }
 }
@@ -142,25 +160,30 @@ if ($ids) {
     $rr = $rs->get_result();
     while ($reply = $rr->fetch_assoc()) {
         $pid = (int)$reply['parent_id'];
-        if (!isset($messages[$pid])) continue;
+        if (!isset($byId[$pid])) continue;
         $entry = [
             'id'          => (int)$reply['id'],
             'message'     => $reply['message'],
             'image_url'   => $reply['image_url'],
             'received_at' => $reply['received_at'],
         ];
-        if ($reply['reply_kind'] === 'forward') {
-            // Newest first, so the latest thought is the first thing read.
-            array_unshift($messages[$pid]['notes'], $entry);
-        } else {
-            $messages[$pid]['replies'][] = $entry;
+        foreach ($byId[$pid] as $i) {
+            if ($reply['reply_kind'] === 'forward') {
+                // Only above the bumped appearance, newest first.
+                if ($messages[$i]['is_bump']) array_unshift($messages[$i]['notes'], $entry);
+            } else {
+                $messages[$i]['replies'][] = $entry;
+            }
         }
     }
     $rs->close();
 }
 
 // Top-level posts only — replies live inside their post, not in the count.
-$total = (int)$conn->query("SELECT COUNT(*) AS total FROM messages WHERE parent_id IS NULL AND deleted_at IS NULL")->fetch_assoc()['total'];
+$total = (int)$conn->query(
+    "SELECT COUNT(*) + SUM(bumped_at IS NOT NULL) AS total
+     FROM messages WHERE parent_id IS NULL AND deleted_at IS NULL"
+)->fetch_assoc()['total'];
 $conn->close();
 
 if ($single_id !== null) {

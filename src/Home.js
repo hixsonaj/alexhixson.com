@@ -59,7 +59,7 @@ export default function Home() {
       .then(data => {
         if (data.success) {
           setPosts(prev => prev.map(p => {
-            if (p.id !== postId) return p;
+            if (p.id !== postId || !p.poll) return p;
             return { ...p, poll: { ...p.poll, votes: data.votes, user_voted: data.user_voted } };
           }));
         }
@@ -75,7 +75,7 @@ export default function Home() {
           <div className='Post'><p>No posts yet.</p></div>
         ) : (
           posts.map(post => (
-            <div key={post.id} className={post.post_type === 'essay' ? 'Post Post_Essay' : 'Post'}>
+            <div key={`${post.id}-${post.is_bump ? 'bump' : 'orig'}`} className={post.post_type === 'essay' ? 'Post Post_Essay' : 'Post'}>
               <Notes notes={post.notes} />
               {post.post_type === 'essay' ? (
                 <EssayPreview post={post} />

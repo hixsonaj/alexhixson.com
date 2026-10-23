@@ -172,9 +172,10 @@ Leah's, not public comments.
 
 ### Bringing an old post back to the top
 
-Forward one of your own posts to the feed address. The post moves to the top of
-the feed while still showing the date it was written — nothing is reposted or
-duplicated.
+Forward one of your own posts to the feed address. It then appears **twice**:
+at the top of the feed under your new comment, and still in its original place
+further down, exactly as it read before. Both show the date it was written;
+nothing is reposted or edited.
 
 - Anything you type above the forwarded text is shown **above** the post, since
   it's the newer thought — with the older writing stepped back in grey beneath a
@@ -184,8 +185,10 @@ duplicated.
 - Forwarding something that isn't one of your posts falls back to posting it as
   a new post, and the mail log says so.
 
-Ordering is `COALESCE(bumped_at, received_at)`, so bumping changes position
-only, never the displayed date.
+The feed query unions each post with a second row for its bump, so one post can
+hold two places in the feed. `total` counts appearances rather than posts, which
+is what LOAD MORE pages through. Only the bumped appearance carries the comment;
+the one in its original place has no note and is not greyed.
 
 Matching is more forgiving here than for replies, because mail clients rewrap
 quoted text and a forward can be edited before sending. A forward matches the
