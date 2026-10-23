@@ -61,6 +61,9 @@ $looks_like_reply = reply_subject_is_reply($subject) || $reply_to_ids || $thread
 // "delete" as the subject removes the post being replied to, rather than posting.
 $is_delete = reply_subject_is_delete($subject);
 if ($is_delete) $looks_like_reply = true;
+// Forwarding one of your own posts back to the feed moves it to the top.
+$is_forward = reply_subject_is_forward($subject);
+if ($is_forward) $looks_like_reply = true;   // its body carries the quoted original
 
 // ---- Text content ----
 $text = $mail->getTextContent();
@@ -170,10 +173,31 @@ if ($looks_like_reply && $parent_id === null && $thread_key && $thread_is_reply)
 if ($looks_like_reply && $parent_id === null && $quoted_original !== '') {
     // Posts sent before ids were stored. Newest first, so a repeated phrase
     // matches the most recent post that used it.
+    $candidates = [];
     $res = $mysqli->query("SELECT id, parent_id, message FROM messages WHERE deleted_at IS NULL ORDER BY received_at DESC LIMIT 300");
     while ($row = $res->fetch_assoc()) {
-        if (reply_quote_matches($quoted_original, $row['message'])) {
-            $match_id = (int)$row['id']; $parent_id = $root_of($row); $match_how = 'quoted-text'; break;
+        $candidates[] = $row;
+        if ($match_id === null && reply_quote_matches($quoted_original, $row['message'])) {
+            $match_id = (int)$row['id']; $parent_id = $root_of($row); $match_how = 'quoted-text';
+        }
+    }
+
+    // Nothing matched exactly. Mail clients rewrap quoted text, and a forward can
+    // be edited before sending, so fall back to the closest match — but only when
+    // it is both strong and clearly ahead of the runner-up, so an ambiguous
+    // guess is refused rather than filed against the wrong post.
+    if ($match_id === null) {
+        $best = $second = null; $bestScore = $secondScore = 0.0;
+        foreach ($candidates as $row) {
+            $score = reply_quote_similarity($quoted_original, $row['message']);
+            if ($score > $bestScore) { $second = $best; $secondScore = $bestScore; $best = $row; $bestScore = $score; }
+            elseif ($score > $secondScore) { $second = $row; $secondScore = $score; }
+        }
+        if ($best && $bestScore >= 88.0 && ($secondScore < 80.0 || $bestScore - $secondScore >= 8.0)) {
+            $match_id = (int)$best['id']; $parent_id = $root_of($best);
+            $match_how = 'quoted-text ~' . round($bestScore) . '%';
+        } elseif ($best) {
+            logline("closest post was {$best['id']} at " . round($bestScore) . "% — below the bar, treating as a new post");
         }
     }
 }
@@ -233,6 +257,38 @@ foreach ($mail->getAllAttachmentParts() as $part) {
         logline("saved image: $filename");
     }
     break;
+}
+
+// ---- forward: move an existing post back to the top ----
+if ($is_forward && !$is_delete) {
+    if ($match_id === null) {
+        logline("forward didn't match a post — posting as a new post instead");
+    } else {
+        // Bump the thread's root; received_at is left alone so the post keeps
+        // showing the day it was written.
+        $root = $parent_id ?? $match_id;
+        $bs = $mysqli->prepare("UPDATE messages SET bumped_at = NOW() WHERE id = ?");
+        $bs->bind_param("i", $root);
+        $bs->execute();
+        $bs->close();
+
+        // Anything typed above the quote is a comment on the post, so file it as
+        // a reply. A bare forward with no new text just bumps.
+        if ($clean_message !== '') {
+            $rs = $mysqli->prepare(
+                "INSERT INTO messages (sender_name, sender_email, subject, message, image_url, parent_id, email_message_id, received_at)
+                 VALUES (?, ?, '', ?, ?, ?, ?, NOW())"
+            );
+            $rs->bind_param("ssssis", $name, $email, $clean_message, $image_url, $root, $own_msg_id);
+            $rs->execute();
+            logline("forward bumped post $root (matched by $match_how) and added reply {$mysqli->insert_id}");
+            $rs->close();
+        } else {
+            logline("forward bumped post $root (matched by $match_how)");
+        }
+        $mysqli->close();
+        exit(0);
+    }
 }
 
 // ---- Insert ----

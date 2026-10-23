@@ -131,6 +131,25 @@ foreach (['delete this one', 'Re: please delete', 'deleted', 'Essay: delete', 'P
     check("\"$s\" is NOT a delete", reply_subject_is_delete($s), false);
 }
 
+echo "--- forward subjects ---\n";
+foreach (['Fw:', 'Fwd: anything', 'FW: Re: hello', 'Re: Fwd: hello', 'TR: bonjour'] as $s) {
+    check("\"$s\" is a forward", reply_subject_is_forward($s), true);
+}
+foreach (['Re: hello', 'Essay: Forwarding things', 'delete', 'Poll: fw, re', ''] as $s) {
+    check("\"$s\" is NOT a forward", reply_subject_is_forward($s), false);
+}
+
+echo "--- fuzzy similarity, for forwards of edited or rewrapped text ---\n";
+$orig = "If I ever run out of Copilot credits at work I'm actually fucked.";
+check('same text scores 100', (int)round(reply_quote_similarity($orig, $orig)), 100);
+check('one word changed still matches (>=88)',
+      reply_quote_similarity("If I ever run out of copilot tokens at work I'm actually fucked.", $orig) >= 88, true);
+check('rewrapped matches',
+      reply_quote_similarity("If I ever run out of Copilot\ncredits at work I'm actually fucked.", $orig) >= 88, true);
+check('a different post does not match',
+      reply_quote_similarity("Networking the fuck out of these guys at the conference today", $orig) >= 88, false);
+check('short text refuses to judge', reply_quote_similarity("Test", "Test"), 0.0);
+
 echo "--- matching quoted text to a post ---\n";
 check('curly vs straight quotes', reply_quote_matches("Y'all rock with the LinkedIn and zero four profile pic? I gotta go to New York", "Y’all rock with the LinkedIn and zero four profile pic? I gotta go to New York"), true);
 check('rewrapped long post', reply_quote_matches("Would people even want a renewed\nvolume by speed app? I had Claude", "Would people even want a renewed volume by speed app? I had Claude build it"), true);

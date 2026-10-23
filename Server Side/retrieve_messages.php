@@ -26,15 +26,15 @@ const FEED_ESSAY_CHARS = 2000;
 
 if ($single_id !== null) {
     $stmt = $conn->prepare(
-        "SELECT id, sender_name, subject, message, image_url, received_at
+        "SELECT id, sender_name, subject, message, image_url, received_at, bumped_at
          FROM messages WHERE id = ? AND parent_id IS NULL AND deleted_at IS NULL"
     );
     $stmt->bind_param("i", $single_id);
 } else {
     $stmt = $conn->prepare(
-        "SELECT id, sender_name, subject, message, image_url, received_at
+        "SELECT id, sender_name, subject, message, image_url, received_at, bumped_at
          FROM messages WHERE parent_id IS NULL AND deleted_at IS NULL
-         ORDER BY received_at DESC LIMIT ? OFFSET ?"
+         ORDER BY COALESCE(bumped_at, received_at) DESC LIMIT ? OFFSET ?"
     );
     $stmt->bind_param("ii", $limit, $offset);
 }

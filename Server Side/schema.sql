@@ -19,12 +19,16 @@ CREATE TABLE IF NOT EXISTS `messages` (
   `thread_key`       varchar(40)  DEFAULT NULL,
   -- Soft delete (see migrations/003_soft_delete.sql). NULL means visible.
   `deleted_at`       timestamp    NULL DEFAULT NULL,
+  -- Set when a post is forwarded back to the feed (migrations/005_bump.sql).
+  -- Feed order is COALESCE(bumped_at, received_at).
+  `bumped_at`        timestamp    NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_received_at` (`received_at`),
   KEY `idx_parent_id` (`parent_id`),
   KEY `idx_email_message_id` (`email_message_id`),
   KEY `idx_thread_key` (`thread_key`),
-  KEY `idx_deleted_at` (`deleted_at`)
+  KEY `idx_deleted_at` (`deleted_at`),
+  KEY `idx_bumped_at` (`bumped_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `polls` (

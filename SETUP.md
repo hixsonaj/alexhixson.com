@@ -170,6 +170,26 @@ says so. Replies can't create polls or essays.
 Posting still requires an address in `allowed_senders` — replies are yours and
 Leah's, not public comments.
 
+### Bringing an old post back to the top
+
+Forward one of your own posts to the feed address. The post moves to the top of
+the feed while still showing the date it was written — nothing is reposted or
+duplicated.
+
+- Anything you type above the forwarded text is added as a reply to that post.
+- A bare forward with nothing added just moves it up.
+- Forwarding something that isn't one of your posts falls back to posting it as
+  a new post, and the mail log says so.
+
+Ordering is `COALESCE(bumped_at, received_at)`, so bumping changes position
+only, never the displayed date.
+
+Matching is more forgiving here than for replies, because mail clients rewrap
+quoted text and a forward can be edited before sending. A forward matches the
+closest post at 88% similarity or better, and only when that post is clearly
+ahead of the next best — an ambiguous forward becomes a new post rather than
+attaching to the wrong thing. The mail log records the score.
+
 ### Deleting a post
 
 Reply to the post's email, change the subject to just `delete`, and send it to

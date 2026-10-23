@@ -52,6 +52,38 @@ function reply_subject_is_delete($subject) {
     return (bool)preg_match('/^(delete|remove)[.!]?$/i', trim($s));
 }
 
+/**
+ * True when the subject marks a forward ("Fw:", "FWD:", "Re: Fwd:"). Forwarding
+ * one of your own posts back to the feed moves it to the top.
+ */
+function reply_subject_is_forward($subject) {
+    $s = trim((string)$subject);
+    $sawForward = false;
+    while (preg_match('/^\s*(re|aw|sv|antw|fwd?|wg|tr)(\[\d+\])?\s*:\s*(.*)$/is', $s, $m)) {
+        if (preg_match('/^(fwd?|wg|tr)$/i', $m[1])) $sawForward = true;
+        $s = $m[3];
+    }
+    return $sawForward;
+}
+
+/**
+ * How closely quoted text matches a stored post, 0-100.
+ *
+ * reply_quote_matches() requires the opening characters to be identical, which
+ * is right for filing a reply. Forwards are looser: mail clients rewrap, and the
+ * text can be edited before sending. This compares a common-length prefix so a
+ * longer stored post isn't penalised for the extra tail.
+ */
+function reply_quote_similarity($quoted, $postText) {
+    $q = reply_normalize($quoted);
+    $p = reply_normalize($postText);
+    if ($q === '' || $p === '') return 0.0;
+    $len = min(mb_strlen($q), mb_strlen($p), 200);
+    if ($len < 25) return 0.0;        // too short to judge
+    similar_text(mb_substr($q, 0, $len), mb_substr($p, 0, $len), $pct);
+    return $pct;
+}
+
 /** Collapse whitespace and quote styles so text from different sources compares equal. */
 function reply_normalize($text) {
     $t = str_replace(["\u{2018}", "\u{2019}", "\u{201C}", "\u{201D}", "\u{00A0}"], ["'", "'", '"', '"', ' '], (string)$text);
