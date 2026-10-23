@@ -56,7 +56,8 @@ while ($row = $result->fetch_assoc()) {
         $row['title']     = null;
     }
     $row['poll'] = null;
-    $row['replies'] = [];
+    $row['notes'] = [];      // comments that arrived with a forward, shown above
+    $row['replies'] = [];    // ordinary replies, shown below
     $messages[$row['id']] = $row;
     $ids[] = (int)$row['id'];
 }
@@ -133,7 +134,7 @@ if ($ids) {
 if ($ids) {
     $in = implode(',', array_fill(0, count($ids), '?'));
     $rs = $conn->prepare(
-        "SELECT id, parent_id, message, image_url, received_at
+        "SELECT id, parent_id, message, image_url, received_at, reply_kind
          FROM messages WHERE parent_id IN ($in) AND deleted_at IS NULL ORDER BY received_at ASC, id ASC"
     );
     $rs->bind_param(str_repeat('i', count($ids)), ...$ids);
@@ -142,12 +143,18 @@ if ($ids) {
     while ($reply = $rr->fetch_assoc()) {
         $pid = (int)$reply['parent_id'];
         if (!isset($messages[$pid])) continue;
-        $messages[$pid]['replies'][] = [
+        $entry = [
             'id'          => (int)$reply['id'],
             'message'     => $reply['message'],
             'image_url'   => $reply['image_url'],
             'received_at' => $reply['received_at'],
         ];
+        if ($reply['reply_kind'] === 'forward') {
+            // Newest first, so the latest thought is the first thing read.
+            array_unshift($messages[$pid]['notes'], $entry);
+        } else {
+            $messages[$pid]['replies'][] = $entry;
+        }
     }
     $rs->close();
 }

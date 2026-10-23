@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { api } from './config';
 import RichText from './RichText';
 import Replies from './Replies';
+import Notes from './Notes';
 
 export default function Essay() {
   const { id } = useParams();
@@ -47,7 +48,8 @@ export default function Essay() {
       <span className='Essay_Date'>
         {new Date(essay.received_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
       </span>
-      <div className='Essay_Body'>
+      <Notes notes={essay.notes} />
+      <div className={essay.notes && essay.notes.length > 0 ? 'Essay_Body Post_Original' : 'Essay_Body'}>
         <RichText text={essay.message} />
       </div>
       {essay.image_url && <img className='Essay_Image' src={essay.image_url} alt='' />}

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { api, SITE_NAME_SHORT } from './config';
 import RichText from './RichText';
 import Replies from './Replies';
+import Notes from './Notes';
 import { excerpt } from './postText';
 
 const POSTS_PER_PAGE = 50;
@@ -75,10 +76,13 @@ export default function Home() {
         ) : (
           posts.map(post => (
             <div key={post.id} className={post.post_type === 'essay' ? 'Post Post_Essay' : 'Post'}>
+              <Notes notes={post.notes} />
               {post.post_type === 'essay' ? (
                 <EssayPreview post={post} />
               ) : (
-                <RichText text={post.message} />
+                <div className={post.notes && post.notes.length > 0 ? 'Post_Original' : undefined}>
+                  <RichText text={post.message} />
+                </div>
               )}
               {post.post_type !== 'essay' && post.image_url && (
                 <img className='Post_Image' src={post.image_url} alt="" />

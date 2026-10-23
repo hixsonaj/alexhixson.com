@@ -276,8 +276,8 @@ if ($is_forward && !$is_delete) {
         // a reply. A bare forward with no new text just bumps.
         if ($clean_message !== '') {
             $rs = $mysqli->prepare(
-                "INSERT INTO messages (sender_name, sender_email, subject, message, image_url, parent_id, email_message_id, received_at)
-                 VALUES (?, ?, '', ?, ?, ?, ?, NOW())"
+                "INSERT INTO messages (sender_name, sender_email, subject, message, image_url, parent_id, email_message_id, reply_kind, received_at)
+                 VALUES (?, ?, '', ?, ?, ?, ?, 'forward', NOW())"
             );
             $rs->bind_param("ssssis", $name, $email, $clean_message, $image_url, $root, $own_msg_id);
             $rs->execute();

@@ -255,3 +255,45 @@
     font-size: 0.8rem;
   }
 }
+
+/* Forward notes — a later thought about an older post, so they read first.
+   Replies are indented under the post; a note sits above it, full width, with
+   the original text stepped back so the newest writing leads. */
+.Notes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.Note {
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #bfbfbf;
+}
+
+.Note_Date {
+  display: block;
+  font-size: 0.7rem;
+  color: #888888;
+  margin-top: 4px;
+}
+
+.Note_Image {
+  display: block;
+  max-width: 450px;
+  max-height: 450px;
+  width: 100%;
+  object-fit: contain;
+  margin-top: 8px;
+}
+
+/* The earlier writing, once a newer note sits above it. */
+.Post_Original p {
+  color: #5a5a5a;
+}
+
+@media (max-width: 600px) {
+  .Post .Note p {
+    font-size: 0.85rem;
+  }
+}

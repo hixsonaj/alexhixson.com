@@ -22,6 +22,9 @@ CREATE TABLE IF NOT EXISTS `messages` (
   -- Set when a post is forwarded back to the feed (migrations/005_bump.sql).
   -- Feed order is COALESCE(bumped_at, received_at).
   `bumped_at`        timestamp    NULL DEFAULT NULL,
+  -- NULL for an ordinary reply; 'forward' for a comment that arrived with a
+  -- forward, which reads above its post (migrations/006_reply_kind.sql).
+  `reply_kind`       varchar(16)  DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_received_at` (`received_at`),
   KEY `idx_parent_id` (`parent_id`),

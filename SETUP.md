@@ -176,7 +176,10 @@ Forward one of your own posts to the feed address. The post moves to the top of
 the feed while still showing the date it was written — nothing is reposted or
 duplicated.
 
-- Anything you type above the forwarded text is added as a reply to that post.
+- Anything you type above the forwarded text is shown **above** the post, since
+  it's the newer thought — with the older writing stepped back in grey beneath a
+  dashed line. Ordinary replies still sit indented below the post, so the two
+  are easy to tell apart. Several forwards stack newest first.
 - A bare forward with nothing added just moves it up.
 - Forwarding something that isn't one of your posts falls back to posting it as
   a new post, and the mail log says so.
